@@ -147,6 +147,17 @@
     --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
 }
 
+.admin-sidebar {
+    --sidebar-background: hsl(222, 47%, 11%); /* slate-900 equivalent */
+    --sidebar-foreground: hsl(210, 40%, 98%);
+    --sidebar-primary: hsl(210, 40%, 98%);
+    --sidebar-primary-foreground: hsl(222, 47%, 11%);
+    --sidebar-accent: hsl(217, 33%, 17%);
+    --sidebar-accent-foreground: hsl(210, 40%, 98%);
+    --sidebar-border: hsl(217, 33%, 17%);
+}
+
+
 @layer base {
     * {
         @apply border-border;
