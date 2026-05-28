@@ -12,7 +12,7 @@ import {
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Calendar, LayoutGrid, Settings, Users, Briefcase } from 'lucide-react';
-import AppLogo from './app-logo';
+import AppLogoIcon from './app-logo-icon';
 
 const adminNavItems: NavItem[] = [
     { title: 'Dashboard',          url: '/admin/dashboard',    icon: LayoutGrid },
@@ -29,7 +29,7 @@ const employeeNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
-    const isAdmin = auth.user.role === 'superadmin' || auth.user.role === 'admin';
+    const isAdmin = auth.user.role === 'superadmin' || auth.user.role === 'hr';
     const navItems = isAdmin ? adminNavItems : employeeNavItems;
 
     return (
@@ -57,7 +57,7 @@ export function AppSidebar() {
                                     rounded-[8px] bg-[#1c1c1e]
                                     shadow-[0_1px_3px_rgba(0,0,0,0.22)]
                                 ">
-                                    <AppLogo className="h-4 w-4 text-white" />
+                                    <AppLogoIcon className="h-4 w-4 text-white fill-current" />
                                 </div>
                                 <span className="
                                     text-[15px] font-semibold tracking-[-0.3px] text-[#1c1c1e]

@@ -23,14 +23,29 @@ class User extends Authenticatable
         'password',
         'role',
         'designation_id',
+        'dob',
+        'gender',
+        'phone',
+        'employee_id',
+        'department',
+        'joining_date',
+        'employment_type',
     ];
 
     /**
-     * Check if the user is a superadmin or admin.
+     * Check if the user is a superadmin.
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'superadmin' || $this->role === 'admin';
+        return $this->role === 'superadmin';
+    }
+
+    /**
+     * Check if the user has administrative/HR access.
+     */
+    public function hasAdminAccess(): bool
+    {
+        return $this->role === 'superadmin' || $this->role === 'hr';
     }
 
     /**

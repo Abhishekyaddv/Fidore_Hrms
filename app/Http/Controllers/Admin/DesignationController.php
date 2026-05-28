@@ -16,7 +16,7 @@ class DesignationController extends Controller
      */
     protected function checkAdmin()
     {
-        if (request()->user()?->role !== 'superadmin' && request()->user()?->role !== 'admin') {
+        if (!request()->user()?->hasAdminAccess()) {
             abort(403);
         }
     }

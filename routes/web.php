@@ -9,19 +9,41 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('Employee/Dashboard');
+        $user = request()->user()->load('designation');
+        return Inertia::render('Employee/Dashboard', [
+            'employee' => $user,
+        ]);
     })->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('dashboard', function () {
             // Check basic role manually for now since strict middleware is coming later
-            if (request()->user()?->role !== 'superadmin' && request()->user()?->role !== 'admin') {
+            if (!request()->user()?->hasAdminAccess()) {
                 abort(403);
             }
-            return Inertia::render('Admin/Dashboard');
+
+            // Fetch designations for the dropdown
+            $designations = \App\Models\Designation::all();
+
+            // Calculate next sequential employee ID
+            $lastSeq = \App\Models\User::whereNotNull('employee_id')
+                ->where('employee_id', 'like', 'EMP-%')
+                ->get()
+                ->map(function ($user) {
+                    return (int) str_replace('EMP-', '', $user->employee_id);
+                })
+                ->max();
+            $nextSeq = ($lastSeq ?: 0) + 1;
+            $nextEmployeeId = 'EMP-' . $nextSeq;
+
+            return Inertia::render('Admin/Dashboard', [
+                'designations' => $designations,
+                'nextEmployeeId' => $nextEmployeeId,
+            ]);
         })->name('dashboard');
 
         Route::resource('designations', \App\Http\Controllers\Admin\DesignationController::class);
+        Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
     });
 });
 

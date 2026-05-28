@@ -180,22 +180,22 @@ export default function Designations({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Designation Management" />
-            <div className="flex flex-1 flex-col gap-6 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+            <div className="flex flex-1 flex-col gap-6 p-6 bg-surface-1 min-h-screen">
                 
                 {/* Header Title Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
                             Designation Management
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400">
+                        <p className="text-text-secondary">
                             Configure and organize job titles across all departments.
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <Button
                             onClick={handleCreateOpen}
-                            className="bg-[#0f172a] hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer shadow-xs"
+                            className="bg-brand-600 hover:bg-brand-400 text-surface-0 cursor-pointer shadow-xs border-none"
                         >
                             <Plus className="mr-2 h-4 w-4" /> Create New
                         </Button>
@@ -205,45 +205,45 @@ export default function Designations({
                 {/* Premium Stats Row */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Card 1: Total Designations */}
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 flex items-center gap-4 shadow-xs">
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg shrink-0">
-                            <Briefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <div className="rounded-xl border border-border bg-surface-0 p-6 flex items-center gap-4 shadow-xs">
+                        <div className="p-3 bg-info-bg rounded-lg shrink-0">
+                            <Briefcase className="h-6 w-6 text-info-text" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                            <p className="text-sm font-medium text-text-secondary">
                                 Total Designations
                             </p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                            <h3 className="text-2xl font-bold text-text-primary mt-1">
                                 {stats.total_designations}
                             </h3>
                         </div>
                     </div>
 
                     {/* Card 2: Active Departments */}
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 flex items-center gap-4 shadow-xs">
-                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg shrink-0">
-                            <Building2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    <div className="rounded-xl border border-border bg-surface-0 p-6 flex items-center gap-4 shadow-xs">
+                        <div className="p-3 bg-success-bg rounded-lg shrink-0">
+                            <Building2 className="h-6 w-6 text-success-text" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                            <p className="text-sm font-medium text-text-secondary">
                                 Active Departments
                             </p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                            <h3 className="text-2xl font-bold text-text-primary mt-1">
                                 {stats.active_departments}
                             </h3>
                         </div>
                     </div>
 
                     {/* Card 3: Unassigned Employees */}
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 flex items-center gap-4 shadow-xs">
-                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg shrink-0">
-                            <UserCheck className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                    <div className="rounded-xl border border-border bg-surface-0 p-6 flex items-center gap-4 shadow-xs">
+                        <div className="p-3 bg-warning-bg rounded-lg shrink-0">
+                            <UserCheck className="h-6 w-6 text-warning-text" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                            <p className="text-sm font-medium text-text-secondary">
                                 Unassigned Employees
                             </p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                            <h3 className="text-2xl font-bold text-text-primary mt-1">
                                 {stats.unassigned_employees}
                             </h3>
                         </div>
@@ -251,22 +251,22 @@ export default function Designations({
                 </div>
 
                 {/* Table & Search Card */}
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+                <div className="rounded-xl border border-border bg-surface-0 overflow-hidden shadow-xs">
                     
                     {/* Toolbar */}
-                    <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-950">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                    <div className="p-5 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-0">
+                        <h2 className="text-lg font-bold text-text-primary">
                             Current Job Titles
                         </h2>
                         
                         {/* Search Input */}
                         <div className="relative w-full sm:w-72">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                             <Input
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Search designations..."
-                                className="pl-9 h-10 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus-visible:ring-slate-950 dark:focus-visible:ring-slate-300"
+                                className="pl-9 h-10 border-border bg-surface-2 focus-visible:ring-accent-500"
                             />
                         </div>
                     </div>
@@ -274,7 +274,7 @@ export default function Designations({
                     {/* Table View */}
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left border-collapse">
-                            <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 font-semibold tracking-wider">
+                            <thead className="text-xs text-text-secondary uppercase bg-surface-2 border-b border-border font-semibold tracking-wider">
                                 <tr>
                                     <th scope="col" className="px-6 py-4">Designation Name</th>
                                     <th scope="col" className="px-6 py-4">Department</th>
@@ -287,28 +287,28 @@ export default function Designations({
                                     designations.map((designation) => (
                                         <tr
                                             key={designation.id}
-                                            className="bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors"
+                                            className="bg-surface-0 border-b border-border hover:bg-surface-1/70 transition-colors"
                                         >
                                             <td className="px-6 py-4">
                                                 <div>
-                                                    <span className="font-semibold text-slate-900 dark:text-white text-[15px]">
+                                                    <span className="font-semibold text-text-primary text-[15px]">
                                                         {designation.display_name}
                                                     </span>
-                                                    <span className="ml-2.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium tracking-tight bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                                    <span className="ml-2.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium tracking-tight bg-surface-2 text-text-secondary">
                                                         {designation.name}
                                                     </span>
                                                     {designation.description && (
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md line-clamp-1">
+                                                        <p className="text-xs text-text-muted mt-1 max-w-md line-clamp-1">
                                                             {designation.description}
                                                         </p>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm font-medium">
+                                            <td className="px-6 py-4 text-text-secondary text-sm font-medium">
                                                 {designation.department}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300">
+                                            <td className="px-6 py-4 text-text-secondary text-sm">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-2 text-text-secondary">
                                                     {designation.users_count}{' '}
                                                     {designation.users_count === 1
                                                         ? 'Employee'
@@ -319,14 +319,14 @@ export default function Designations({
                                                 <div className="flex items-center justify-end gap-2.5">
                                                     <button
                                                         onClick={() => handleEditOpen(designation)}
-                                                        className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white transition-all cursor-pointer"
+                                                        className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-all cursor-pointer border-none"
                                                         title="Edit Designation"
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteOpen(designation.id)}
-                                                        className="p-2 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all cursor-pointer"
+                                                        className="p-2 rounded-lg text-danger-text hover:bg-danger-bg transition-all cursor-pointer border-none"
                                                         title="Delete Designation"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -339,7 +339,7 @@ export default function Designations({
                                     <tr>
                                         <td
                                             colSpan={4}
-                                            className="px-6 py-12 text-center text-slate-500 dark:text-slate-400"
+                                            className="px-6 py-12 text-center text-text-secondary"
                                         >
                                             No designations found. Click &quot;Create New&quot; to add one.
                                         </td>
@@ -350,7 +350,7 @@ export default function Designations({
                     </div>
 
                     {/* Pagination Indicator (Static placeholder matching screenshots) */}
-                    <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/20 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                    <div className="px-6 py-4 bg-surface-1/50 border-t border-border flex justify-between items-center text-xs text-text-secondary">
                         <span>
                             Showing {designations.length} of{' '}
                             {stats.total_designations} designations
@@ -359,7 +359,7 @@ export default function Designations({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 border-slate-200 dark:border-slate-800"
+                                className="h-8 w-8 p-0 border-border"
                                 disabled
                             >
                                 <span className="sr-only">Previous page</span>
@@ -368,14 +368,14 @@ export default function Designations({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 border-slate-200 dark:border-slate-800 bg-slate-900 text-white dark:bg-blue-600 dark:border-blue-600 hover:text-white hover:bg-slate-800"
+                                className="h-8 w-8 p-0 border-border bg-brand-600 text-surface-0 hover:bg-brand-400"
                             >
                                 1
                             </Button>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 border-slate-200 dark:border-slate-800"
+                                className="h-8 w-8 p-0 border-border"
                                 disabled
                             >
                                 <span className="sr-only">Next page</span>
@@ -388,14 +388,14 @@ export default function Designations({
 
             {/* Create & Edit Modal Dialog */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[480px] p-6 gap-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950">
-                    <DialogHeader className="gap-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                        <DialogTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <DialogContent className="sm:max-w-[480px] p-6 gap-6 rounded-xl border border-border shadow-xl bg-surface-0">
+                    <DialogHeader className="gap-1 border-b border-border pb-4">
+                        <DialogTitle className="text-xl font-bold tracking-tight text-text-primary">
                             {editingDesignation
                                 ? 'Edit Designation'
                                 : 'Create New Designation'}
                         </DialogTitle>
-                        <DialogDescription className="text-slate-500 dark:text-slate-400">
+                        <DialogDescription className="text-text-secondary">
                             Define the parameters for a new organizational role.
                         </DialogDescription>
                     </DialogHeader>
@@ -405,7 +405,7 @@ export default function Designations({
                         <div className="space-y-2">
                             <Label
                                 htmlFor="name"
-                                className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                                className="text-sm font-semibold text-text-secondary"
                             >
                                 Designation Name
                             </Label>
@@ -414,11 +414,11 @@ export default function Designations({
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 placeholder="e.g. Senior Project Manager"
-                                className="h-11 border-slate-200 dark:border-slate-800 focus-visible:ring-slate-950 dark:focus-visible:ring-slate-300"
+                                className="h-11 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
                                 required
                             />
                             {errors.name && (
-                                <p className="text-xs font-semibold text-rose-500 mt-1.5 flex items-center gap-1">
+                                <p className="text-xs font-semibold text-danger-text mt-1.5 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" />
                                     {errors.name}
                                 </p>
@@ -429,7 +429,7 @@ export default function Designations({
                         <div className="space-y-2">
                             <Label
                                 htmlFor="department"
-                                className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                                className="text-sm font-semibold text-text-secondary"
                             >
                                 Department
                             </Label>
@@ -440,11 +440,11 @@ export default function Designations({
                             >
                                 <SelectTrigger
                                     id="department"
-                                    className="h-11 border-slate-200 dark:border-slate-800 focus:ring-slate-950 dark:focus:ring-slate-300 text-left bg-transparent"
+                                    className="h-11 border-border focus:ring-accent-500 text-left bg-transparent"
                                 >
                                     <SelectValue placeholder="Select Department" />
                                 </SelectTrigger>
-                                <SelectContent className="border-slate-200 dark:border-slate-800">
+                                <SelectContent className="border-border bg-surface-0">
                                     {DEPARTMENTS.map((dept) => (
                                         <SelectItem key={dept} value={dept}>
                                             {dept}
@@ -453,7 +453,7 @@ export default function Designations({
                                 </SelectContent>
                             </Select>
                             {errors.department && (
-                                <p className="text-xs font-semibold text-rose-500 mt-1.5 flex items-center gap-1">
+                                <p className="text-xs font-semibold text-danger-text mt-1.5 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" />
                                     {errors.department}
                                 </p>
@@ -464,7 +464,7 @@ export default function Designations({
                         <div className="space-y-2">
                             <Label
                                 htmlFor="description"
-                                className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                                className="text-sm font-semibold text-text-secondary"
                             >
                                 Description
                             </Label>
@@ -474,10 +474,10 @@ export default function Designations({
                                 onChange={(e) => setData('description', e.target.value)}
                                 placeholder="Briefly describe the key responsibilities and expectations for this role..."
                                 rows={4}
-                                className="flex w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-950 dark:focus-visible:ring-slate-300 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm placeholder:text-text-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500 text-text-primary"
                             />
                             {errors.description && (
-                                <p className="text-xs font-semibold text-rose-500 mt-1.5 flex items-center gap-1">
+                                <p className="text-xs font-semibold text-danger-text mt-1.5 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" />
                                     {errors.description}
                                 </p>
@@ -485,28 +485,28 @@ export default function Designations({
                         </div>
 
                         {/* Bottom Info Note */}
-                        <div className="p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-950 rounded-lg flex gap-2.5">
-                            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-blue-700 dark:text-blue-300 leading-normal">
+                        <div className="p-3 bg-info-bg border border-border rounded-lg flex gap-2.5">
+                            <Info className="h-5 w-5 text-info-text shrink-0 mt-0.5" />
+                            <p className="text-xs text-info-text leading-normal">
                                 Note: This designation will be available across the selected
                                 department immediately after creation.
                             </p>
                         </div>
 
                         {/* Actions Footer */}
-                        <DialogFooter className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-row justify-end gap-3">
+                        <DialogFooter className="pt-2 border-t border-border flex flex-row justify-end gap-3">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsOpen(false)}
-                                className="border-slate-200 dark:border-slate-800 font-semibold cursor-pointer h-11 px-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className="border-border text-text-secondary font-semibold cursor-pointer h-11 px-6 rounded-lg hover:bg-surface-2"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="bg-[#0f172a] hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-700 font-semibold cursor-pointer h-11 px-6 rounded-lg shadow-sm"
+                                className="bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-11 px-6 rounded-lg shadow-sm border-none"
                             >
                                 {editingDesignation
                                     ? 'Save Changes'
@@ -519,30 +519,30 @@ export default function Designations({
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent className="sm:max-w-[400px] p-6 gap-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl">
+                <DialogContent className="sm:max-w-[400px] p-6 gap-6 rounded-xl border border-border bg-surface-0 shadow-xl">
                     <DialogHeader className="gap-2 text-center sm:text-left">
-                        <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Trash2 className="h-5 w-5 text-rose-500 shrink-0" /> Confirm
+                        <DialogTitle className="text-lg font-bold text-text-primary flex items-center gap-2">
+                            <Trash2 className="h-5 w-5 text-danger-text shrink-0" /> Confirm
                             Deletion
                         </DialogTitle>
-                        <DialogDescription className="text-slate-500 dark:text-slate-400 leading-normal text-sm">
+                        <DialogDescription className="text-text-secondary leading-normal text-sm">
                             Are you sure you want to delete this designation? Any employees
                             currently assigned to this designation will be set to
                             unassigned. This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <DialogFooter className="flex flex-row justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <DialogFooter className="flex flex-row justify-end gap-3 pt-2 border-t border-border">
                         <Button
                             variant="outline"
                             onClick={() => setIsDeleteOpen(false)}
-                            className="border-slate-200 dark:border-slate-800 font-semibold cursor-pointer h-11 px-5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="border-border text-text-secondary font-semibold cursor-pointer h-11 px-5 rounded-lg hover:bg-surface-2"
                         >
                             Cancel
                         </Button>
                         <Button
                             onClick={confirmDelete}
-                            className="bg-rose-600 hover:bg-rose-700 text-white font-semibold cursor-pointer h-11 px-5 rounded-lg shadow-sm"
+                            className="bg-danger-text hover:opacity-90 text-surface-0 font-semibold cursor-pointer h-11 px-5 rounded-lg shadow-sm border-none"
                         >
                             Delete
                         </Button>
