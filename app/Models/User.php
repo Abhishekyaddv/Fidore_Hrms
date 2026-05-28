@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'designation_id',
     ];
 
     /**
@@ -30,6 +31,14 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'superadmin' || $this->role === 'admin';
+    }
+
+    /**
+     * Get the designation of the user.
+     */
+    public function designation()
+    {
+        return $this->belongsTo(Designation::class);
     }
 
     /**

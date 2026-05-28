@@ -20,6 +20,8 @@ Route::middleware(['auth'])->group(function () {
             }
             return Inertia::render('Admin/Dashboard');
         })->name('dashboard');
+
+        Route::resource('designations', \App\Http\Controllers\Admin\DesignationController::class);
     });
 });
 
