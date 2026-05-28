@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
 {
@@ -19,6 +20,43 @@ class EmployeeController extends Controller
         if (!request()->user()?->hasAdminAccess()) {
             abort(403);
         }
+    }
+
+    /**
+     * Display a listing of the employees.
+     */
+    public function index()
+    {
+        $this->checkAccess();
+
+        $employees = User::whereIn('role', ['employee', 'hr', 'superadmin'])
+            ->with('designation')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalStaff = $employees->count();
+        $activeNow = $totalStaff; // Placeholder as requested
+
+        // Calculate next sequential employee ID for the Add Employee modal
+        $lastSeq = User::whereNotNull('employee_id')
+            ->where('employee_id', 'like', 'EMP-%')
+            ->get()
+            ->map(function ($u) {
+                return (int) str_replace('EMP-', '', $u->employee_id);
+            })
+            ->max();
+        $nextSeq = ($lastSeq ?: 0) + 1;
+        $nextEmployeeId = 'EMP-' . $nextSeq;
+
+        $designations = Designation::all();
+
+        return Inertia::render('Admin/EmployeeDirectory', [
+            'employees' => $employees,
+            'totalStaff' => $totalStaff,
+            'activeNow' => $activeNow,
+            'designations' => $designations,
+            'nextEmployeeId' => $nextEmployeeId,
+        ]);
     }
 
     /**
@@ -42,7 +80,7 @@ class EmployeeController extends Controller
             'designation_id' => 'nullable|exists:designations,id',
             'department' => 'required|string|max:255',
             'joining_date' => 'required|date',
-            'employment_type' => 'required|string|in:Full-time,Contract,Intern',
+            'employment_type' => 'required|string|in:Full-time,Probation,Intern',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
             'role' => 'required|string|in:hr,employee', // Only allow superadmin/hr to create hr or employee roles
@@ -65,6 +103,81 @@ class EmployeeController extends Controller
             'employment_type' => $request->employment_type,
         ]);
 
-        return redirect()->route('admin.dashboard')->with('success', 'Employee profile created successfully.');
+        return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully.');
+    }
+
+    /**
+     * Update the specified employee in storage.
+     */
+    public function update(Request $request, User $employee)
+    {
+        $this->checkAccess();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'dob' => 'nullable|date',
+            'gender' => 'nullable|string|max:50',
+            'phone' => 'nullable|string|max:50',
+            'employee_id' => [
+                'required',
+                'string',
+                Rule::unique('users')->ignore($employee->id),
+                'regex:/^EMP-\d+$/'
+            ],
+            'designation_id' => 'nullable|exists:designations,id',
+            'department' => 'required|string|max:255',
+            'joining_date' => 'required|date',
+            'employment_type' => 'required|string|in:Full-time,Probation,Intern',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($employee->id),
+            ],
+            'password' => 'nullable|string|min:8',
+            'role' => 'required|string|in:hr,employee', // Only allow superadmin/hr to assign hr or employee roles
+        ], [
+            'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
+        ]);
+
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+            'designation_id' => $request->designation_id,
+            'dob' => $request->dob,
+            'gender' => $request->gender,
+            'phone' => $request->phone,
+            'employee_id' => $request->employee_id,
+            'department' => $request->department,
+            'joining_date' => $request->joining_date,
+            'employment_type' => $request->employment_type,
+        ];
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $employee->update($data);
+
+        return redirect()->route('admin.employees.index')->with('success', 'Employee profile updated successfully.');
+    }
+
+    /**
+     * Remove the specified employee from storage.
+     */
+    public function destroy(User $employee)
+    {
+        $this->checkAccess();
+        
+        // Prevent deleting oneself
+        if (request()->user()->id === $employee->id) {
+            return redirect()->back()->with('error', 'You cannot delete your own account.');
+        }
+
+        $employee->delete();
+
+        return redirect()->route('admin.employees.index')->with('success', 'Employee deleted successfully.');
     }
 }

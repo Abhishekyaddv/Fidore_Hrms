@@ -18,7 +18,7 @@ const adminNavItems: NavItem[] = [
     { title: 'Dashboard',          url: '/admin/dashboard',    icon: LayoutGrid },
     { title: 'Designations',       url: '/admin/designations', icon: Briefcase  },
     { title: 'My Leave',           url: '#',                   icon: Calendar   },
-    { title: 'Employee Directory', url: '#',                   icon: Users      },
+    { title: 'Employee Directory', url: '/admin/employees',    icon: Users      },
     { title: 'My Profile',         url: '/profile',            icon: User       },
     { title: 'Settings',           url: '#',                   icon: Settings   },
 ];

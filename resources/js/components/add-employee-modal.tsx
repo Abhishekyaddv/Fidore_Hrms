@@ -36,7 +36,8 @@ interface AddEmployeeModalProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
     designations: Designation[];
-    nextEmployeeId: string;
+    nextEmployeeId?: string;
+    employee?: any;
 }
 
 const DEPARTMENTS = [
@@ -53,28 +54,46 @@ export function AddEmployeeModal({
     setIsOpen,
     designations,
     nextEmployeeId,
+    employee,
 }: AddEmployeeModalProps) {
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
-        name: '',
-        dob: '',
-        gender: '',
-        phone: '',
-        employee_id: nextEmployeeId,
-        designation_id: '',
-        department: '',
-        joining_date: new Date().toISOString().split('T')[0],
-        employment_type: 'Full-time',
-        email: '',
+    const isEditMode = !!employee;
+
+    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+        name: employee?.name || '',
+        dob: employee?.dob || '',
+        gender: employee?.gender || '',
+        phone: employee?.phone || '',
+        employee_id: employee?.employee_id || nextEmployeeId || '',
+        designation_id: employee?.designation_id?.toString() || '',
+        department: employee?.department || '',
+        joining_date: employee?.joining_date || new Date().toISOString().split('T')[0],
+        employment_type: employee?.employment_type || 'Full-time',
+        email: employee?.email || '',
         password: '',
-        role: 'employee',
+        role: employee?.role || 'employee',
     });
 
     // Update Employee ID when nextEmployeeId changes (on successful creations)
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !isEditMode && nextEmployeeId) {
             setData('employee_id', nextEmployeeId);
+        } else if (isOpen && isEditMode && employee) {
+            setData({
+                name: employee.name || '',
+                dob: employee.dob || '',
+                gender: employee.gender || '',
+                phone: employee.phone || '',
+                employee_id: employee.employee_id || '',
+                designation_id: employee.designation_id?.toString() || '',
+                department: employee.department || '',
+                joining_date: employee.joining_date || '',
+                employment_type: employee.employment_type || 'Full-time',
+                email: employee.email || '',
+                password: '',
+                role: employee.role || 'employee',
+            });
         }
-    }, [nextEmployeeId, isOpen]);
+    }, [nextEmployeeId, isOpen, isEditMode, employee]);
 
     // Reset when modal opens/closes
     useEffect(() => {
@@ -86,12 +105,21 @@ export function AddEmployeeModal({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('admin.employees.store'), {
-            onSuccess: () => {
-                setIsOpen(false);
-                reset();
-            },
-        });
+        
+        const onSuccessCallback = () => {
+            setIsOpen(false);
+            reset();
+        };
+
+        if (isEditMode) {
+            put(route('admin.employees.update', employee.id), {
+                onSuccess: onSuccessCallback,
+            });
+        } else {
+            post(route('admin.employees.store'), {
+                onSuccess: onSuccessCallback,
+            });
+        }
     };
 
     return (
@@ -99,10 +127,12 @@ export function AddEmployeeModal({
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-6 gap-6 rounded-xl border border-border shadow-xl bg-surface-0">
                 <DialogHeader className="gap-1 border-b border-border pb-4">
                     <DialogTitle className="text-xl font-bold tracking-tight text-text-primary">
-                        Add New Employee
+                        {isEditMode ? 'Edit Employee Profile' : 'Add New Employee'}
                     </DialogTitle>
                     <DialogDescription className="text-text-secondary">
-                        Create a new corporate profile and assign system roles.
+                        {isEditMode 
+                            ? 'Update the corporate profile and roles of this employee.' 
+                            : 'Create a new corporate profile and assign system roles.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -305,7 +335,7 @@ export function AddEmployeeModal({
                                     Employment Type
                                 </Label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    {['Full-time', 'Contract', 'Intern'].map((type) => (
+                                    {['Full-time', 'Probation', 'Intern'].map((type) => (
                                         <label
                                             key={type}
                                             className={`
@@ -377,9 +407,9 @@ export function AddEmployeeModal({
                                     type="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    placeholder="••••••••"
+                                    placeholder={isEditMode ? "Leave blank to keep current" : "••••••••"}
                                     className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
-                                    required
+                                    required={!isEditMode}
                                 />
                                 {errors.password && (
                                     <p className="text-xs font-medium text-danger-text">{errors.password}</p>
@@ -436,7 +466,7 @@ export function AddEmployeeModal({
                             disabled={processing}
                             className="bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-10 px-5 rounded-lg shadow-sm border-none"
                         >
-                            Save Employee Profile
+                            {isEditMode ? 'Update Profile' : 'Save Employee Profile'}
                         </Button>
                     </DialogFooter>
                 </form>
