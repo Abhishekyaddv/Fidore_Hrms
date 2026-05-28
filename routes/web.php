@@ -9,7 +9,12 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
-        $user = request()->user()->load('designation');
+        $user = request()->user();
+        if ($user->hasAdminAccess()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $user->load('designation');
         return Inertia::render('Employee/Dashboard', [
             'employee' => $user,
         ]);
@@ -45,6 +50,10 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('designations', \App\Http\Controllers\Admin\DesignationController::class);
         Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
     });
+
+    Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+    Route::post('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update_info');
+    Route::post('profile/avatar', [\App\Http\Controllers\ProfileController::class, 'updateAvatar'])->name('profile.update_avatar');
 });
 
 require __DIR__.'/settings.php';

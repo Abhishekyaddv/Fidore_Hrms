@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Calendar, LayoutGrid, Settings, Users, Briefcase } from 'lucide-react';
+import { Calendar, LayoutGrid, Settings, Users, Briefcase, User } from 'lucide-react';
 import AppLogoIcon from './app-logo-icon';
 
 const adminNavItems: NavItem[] = [
@@ -19,12 +19,14 @@ const adminNavItems: NavItem[] = [
     { title: 'Designations',       url: '/admin/designations', icon: Briefcase  },
     { title: 'My Leave',           url: '#',                   icon: Calendar   },
     { title: 'Employee Directory', url: '#',                   icon: Users      },
+    { title: 'My Profile',         url: '/profile',            icon: User       },
     { title: 'Settings',           url: '#',                   icon: Settings   },
 ];
 
 const employeeNavItems: NavItem[] = [
-    { title: 'Dashboard', url: '/dashboard', icon: LayoutGrid },
-    { title: 'My Leave',  url: '#',          icon: Calendar   },
+    { title: 'Dashboard',  url: '/dashboard', icon: LayoutGrid },
+    { title: 'My Leave',   url: '#',          icon: Calendar   },
+    { title: 'My Profile', url: '/profile',   icon: User       },
 ];
 
 export function AppSidebar() {
@@ -38,36 +40,16 @@ export function AppSidebar() {
             variant="inset"
             className={isAdmin ? 'admin-sidebar dark' : ''}
         >
-            {/* ── Header ── */}
-            <SidebarHeader className="border-b border-black/[0.05] px-4 py-5">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            asChild
-                            className="
-                                rounded-[10px] gap-2.5
-                                hover:bg-black/[0.04] active:bg-black/[0.07]
-                                transition-colors duration-150
-                            "
-                        >
-                            <Link href="/dashboard" prefetch>
-                                <div className="
-                                    flex h-[30px] w-[30px] shrink-0 items-center justify-center
-                                    rounded-[8px] bg-[#1c1c1e]
-                                    shadow-[0_1px_3px_rgba(0,0,0,0.22)]
-                                ">
-                                    <AppLogoIcon className="h-4 w-4 text-white fill-current" />
-                                </div>
-                                <span className="
-                                    text-[15px] font-semibold tracking-[-0.3px] text-[#1c1c1e]
-                                ">
-                                    LeaveOS
-                                </span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarHeader className="border-b border-black/[0.05] px-5 py-5">
+                <Link
+                    href={isAdmin ? '/admin/dashboard' : '/dashboard'}
+                    className="flex items-center px-1"
+                    prefetch
+                >
+                    <span className="text-lg font-bold tracking-tight text-white dark:text-white">
+                        HRMS Portal
+                    </span>
+                </Link>
             </SidebarHeader>
 
             {/* ── Nav ── */}

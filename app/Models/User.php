@@ -30,6 +30,9 @@ class User extends Authenticatable
         'department',
         'joining_date',
         'employment_type',
+        'bio',
+        'avatar',
+        'emergency_contact',
     ];
 
     /**
