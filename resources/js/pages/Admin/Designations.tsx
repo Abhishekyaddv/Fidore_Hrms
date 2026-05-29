@@ -462,6 +462,8 @@ export default function Designations({
                                 </p>
                             )}
                         </div>
+                        </div>
+                        
 
                         {/* Description Field */}
                         <div className="space-y-2">

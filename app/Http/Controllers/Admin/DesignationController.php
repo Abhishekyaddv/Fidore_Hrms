@@ -32,13 +32,12 @@ class DesignationController extends Controller
 
         $designations = Designation::withCount('users')
             ->when($search, function ($query, $search) {
-                $query->where('display_name', 'like', "%{$search}%")
-                      ->orWhere('department', 'like', "%{$search}%");
+                $query->where('display_name', 'like', "%{$search}%");
             })
             ->get();
 
         $totalDesignations = Designation::count();
-        $activeDepartments = Designation::distinct('department')->count('department');
+        $activeDepartments = 0;
         $unassignedEmployees = User::whereNull('designation_id')
             ->where('role', 'employee')
             ->count();
