@@ -35,11 +35,10 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        if ($user && $user->hasAdminAccess()) {
-            return redirect()->route('admin.dashboard');
-        }
+        // Generate a 1-hour Sanctum token
+        $token = $user->createToken('auth_token', ['*'], now()->addHour())->plainTextToken;
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('dashboard', absolute: false))->with('token', $token);
     }
 
     /**
@@ -47,11 +46,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = $request->user();
+        if ($user) {
+            $user->tokens()->delete();
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Clear the token from frontend using a flash message
+        return redirect('/')->with('clear_token', true);
     }
 }

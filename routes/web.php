@@ -11,22 +11,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         $user = request()->user();
         if ($user->hasAdminAccess()) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        $user->load('designation');
-        return Inertia::render('Employee/Dashboard', [
-            'employee' => $user,
-        ]);
-    })->name('dashboard');
-
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('dashboard', function () {
-            // Check basic role manually for now since strict middleware is coming later
-            if (!request()->user()?->hasAdminAccess()) {
-                abort(403);
-            }
-
             // Fetch designations for the dropdown
             $designations = \App\Models\Designation::all();
 
@@ -45,7 +29,15 @@ Route::middleware(['auth'])->group(function () {
                 'designations' => $designations,
                 'nextEmployeeId' => $nextEmployeeId,
             ]);
-        })->name('dashboard');
+        }
+
+        $user->load('designation');
+        return Inertia::render('Employee/Dashboard', [
+            'employee' => $user,
+        ]);
+    })->name('dashboard')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+
+    Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\CheckBearerToken::class)->group(function () {
 
         Route::resource('designations', \App\Http\Controllers\Admin\DesignationController::class);
         Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
