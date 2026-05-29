@@ -106,18 +106,21 @@ export function AddEmployeeModal({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
-        const onSuccessCallback = () => {
+        const handleSuccess = () => {
+            console.log('Request successful');
             setIsOpen(false);
             reset();
         };
 
         if (isEditMode) {
             put(route('admin.employees.update', employee.id), {
-                onSuccess: onSuccessCallback,
+                onSuccess: handleSuccess,
+                onError: (errors) => console.error('Request errors:', errors),
             });
         } else {
             post(route('admin.employees.store'), {
-                onSuccess: onSuccessCallback,
+                onSuccess: handleSuccess,
+                onError: (errors) => console.error('Request errors:', errors),
             });
         }
     };

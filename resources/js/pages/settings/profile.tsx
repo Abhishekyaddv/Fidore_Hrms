@@ -30,7 +30,10 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('profile.update'));
+        patch(route('profile.update'), {
+            onSuccess: () => console.log('Request successful'),
+            onError: (errors) => console.error('Request errors:', errors),
+        });
     };
 
     return (

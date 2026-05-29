@@ -61,7 +61,7 @@ export default function Profile({ user, manager }: ProfileProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Dashboard',
-            href: isAdmin ? '/admin/dashboard' : '/dashboard',
+            href: '/dashboard',
         },
         {
             title: 'My Profile',
@@ -78,7 +78,10 @@ export default function Profile({ user, manager }: ProfileProps) {
 
     const handleInfoSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('profile.update_info'));
+        post(route('profile.update_info'), {
+            onSuccess: () => console.log('Request successful'),
+            onError: (errors) => console.error('Request errors:', errors),
+        });
     };
 
     // Avatar upload
@@ -92,7 +95,12 @@ export default function Profile({ user, manager }: ProfileProps) {
             const formData = new FormData();
             formData.append('avatar', file);
             router.post(route('profile.update_avatar'), formData, {
-                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('Request successful');
+                    setAvatarFile(null);
+                },
+                onError: (errors) => console.error('Request errors:', errors),
             });
         }
     };

@@ -18,6 +18,8 @@ export default function ConfirmPassword() {
         e.preventDefault();
 
         post(route('password.confirm'), {
+            onSuccess: () => console.log('Request successful'),
+            onError: (errors) => console.error('Request errors:', errors),
             onFinish: () => reset('password'),
         });
     };

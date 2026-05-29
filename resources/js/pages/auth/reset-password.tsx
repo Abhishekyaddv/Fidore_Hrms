@@ -31,6 +31,8 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('password.store'), {
+            onSuccess: () => console.log('Request successful'),
+            onError: (errors) => console.error('Request errors:', errors),
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };

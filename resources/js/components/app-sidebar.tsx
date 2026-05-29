@@ -15,7 +15,7 @@ import { Calendar, LayoutGrid, Settings, Users, Briefcase, User } from 'lucide-r
 import AppLogoIcon from './app-logo-icon';
 
 const adminNavItems: NavItem[] = [
-    { title: 'Dashboard',          url: '/admin/dashboard',    icon: LayoutGrid },
+    { title: 'Dashboard',          url: '/dashboard',    icon: LayoutGrid },
     { title: 'Designations',       url: '/admin/designations', icon: Briefcase  },
     { title: 'My Leave',           url: '#',                   icon: Calendar   },
     { title: 'Employee Directory', url: '/admin/employees',    icon: Users      },
@@ -42,7 +42,7 @@ export function AppSidebar() {
         >
             <SidebarHeader className="border-b border-black/[0.05] px-5 py-5">
                 <Link
-                    href={isAdmin ? '/admin/dashboard' : '/dashboard'}
+                    href="/dashboard"
                     className="flex items-center px-1"
                     prefetch
                 >

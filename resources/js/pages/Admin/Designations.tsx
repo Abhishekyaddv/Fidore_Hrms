@@ -72,7 +72,7 @@ interface DesignationsProps {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
-        href: '/admin/dashboard',
+        href: '/dashboard',
     },
     {
         title: 'Designations',
@@ -145,16 +145,20 @@ export default function Designations({
         if (editingDesignation) {
             put(route('admin.designations.update', editingDesignation.id), {
                 onSuccess: () => {
+                    console.log('Request successful');
                     setIsOpen(false);
                     reset();
                 },
+                onError: (errors) => console.error('Request errors:', errors),
             });
         } else {
             post(route('admin.designations.store'), {
                 onSuccess: () => {
+                    console.log('Request successful');
                     setIsOpen(false);
                     reset();
                 },
+                onError: (errors) => console.error('Request errors:', errors),
             });
         }
     };
@@ -170,9 +174,11 @@ export default function Designations({
         if (deletingId) {
             router.delete(route('admin.designations.destroy', deletingId), {
                 onSuccess: () => {
+                    console.log('Request successful');
                     setIsDeleteOpen(false);
                     setDeletingId(null);
                 },
+                onError: (errors) => console.error('Request errors:', errors),
             });
         }
     };

@@ -9,7 +9,7 @@ import { AddEmployeeModal } from '@/components/add-employee-modal';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
-        href: '/admin/dashboard',
+        href: '/dashboard',
     },
 ];
 

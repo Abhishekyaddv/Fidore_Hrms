@@ -18,7 +18,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('password.email'));
+        post(route('password.email'), {
+            onSuccess: () => console.log('Request successful'),
+            onError: (errors) => console.error('Request errors:', errors),
+        });
     };
 
     return (

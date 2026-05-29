@@ -1,4 +1,4 @@
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import { LoaderCircle } from 'lucide-react';
 
@@ -16,8 +16,18 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        
         post(route('login'), {
-            onFinish: () => reset('password'),
+            onSuccess: () => {
+                console.log('success');
+            },
+            onError: (errors) => {
+                console.log('validation failed', errors);
+            },
+            onFinish: () => {
+                console.log('request finished');
+                reset('password');
+            },
         });
     };
 
@@ -73,6 +83,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 {status}
                             </div>
                         )}
+
 
                         <div className="max-w-[420px] w-full mx-auto">
                             <h1 className="text-3xl font-bold mb-2 text-[#051C3F]">Login</h1>

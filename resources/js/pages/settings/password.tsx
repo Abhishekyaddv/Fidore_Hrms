@@ -33,8 +33,12 @@ export default function Password() {
 
         put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                console.log('Request successful');
+                reset();
+            },
             onError: (errors) => {
+                console.error('Request errors:', errors);
                 if (errors.password) {
                     reset('password', 'password_confirmation');
                     passwordInput.current?.focus();

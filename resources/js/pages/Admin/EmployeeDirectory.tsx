@@ -52,7 +52,10 @@ export default function EmployeeDirectory({
 
     const handleDelete = (empId: number) => {
         if (confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
-            router.delete(route('admin.employees.destroy', empId));
+            router.delete(route('admin.employees.destroy', empId), {
+                onSuccess: () => console.log('Request successful'),
+                onError: (errors) => console.error('Request errors:', errors),
+            });
         }
     };
 

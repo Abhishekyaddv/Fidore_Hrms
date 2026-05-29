@@ -13,7 +13,10 @@ export default function VerifyEmail({ status }: { status?: string }) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('verification.send'));
+        post(route('verification.send'), {
+            onSuccess: () => console.log('Request successful'),
+            onError: (errors) => console.error('Request errors:', errors),
+        });
     };
 
     return (

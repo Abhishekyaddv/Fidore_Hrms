@@ -20,8 +20,14 @@ export default function DeleteUser() {
 
         destroy(route('profile.destroy'), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
-            onError: () => passwordInput.current?.focus(),
+            onSuccess: () => {
+                console.log('Request successful');
+                closeModal();
+            },
+            onError: (errors) => {
+                console.error('Request errors:', errors);
+                passwordInput.current?.focus();
+            },
             onFinish: () => reset(),
         });
     };
