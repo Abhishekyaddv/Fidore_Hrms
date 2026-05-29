@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Mail, Pencil, Plus, Settings2, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Mail, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function LeaveManagement({ holidays, policies, leaveRequests }: any) {
@@ -74,11 +74,16 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
         });
     };
 
-    // Action Handlers
     const handleUpdateStatus = (id: number, status: string) => {
         if (confirm(`Are you sure you want to mark this request as ${status}?`)) {
             router.patch(route('admin.leaves.requests.update', id), { status });
             setIsEditModalOpen(false);
+        }
+    };
+
+    const handleDeleteRequest = (id: number) => {
+        if (confirm('Are you sure you want to delete this leave request? This action cannot be undone.')) {
+            router.delete(route('admin.leaves.requests.destroy', id));
         }
     };
 
@@ -611,10 +616,11 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                                             </button>
                                                         )}
                                                         <button
-                                                            className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm transition-colors hover:bg-gray-50"
-                                                            title="Message"
+                                                            onClick={() => handleDeleteRequest(req.id)}
+                                                            className="rounded-lg border border-gray-200 bg-white p-1.5 text-red-500 shadow-sm transition-colors hover:bg-red-50"
+                                                            title="Delete Request"
                                                         >
-                                                            <Mail className="h-4 w-4" />
+                                                            <Trash2 className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </td>

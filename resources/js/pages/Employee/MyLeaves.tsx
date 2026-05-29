@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Clock, Palmtree, Pill, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Palmtree, Pill, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { router } from '@inertiajs/react';
 
 export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRequests }: any) {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -28,6 +29,12 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                 setIsApplyModalOpen(false);
             },
         });
+    };
+
+    const deleteLeave = (id: number) => {
+        if (confirm('Are you sure you want to delete this leave request?')) {
+            router.delete(route('my-leaves.destroy', id));
+        }
     };
 
     // Calendar Logic
@@ -252,6 +259,67 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                                 );
                             })}
                         </div>
+                    </div>
+                </div>
+
+                {/* My Leave History */}
+                <div className="mt-8 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-[#051C3F]">My Leave History</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4">Leave Type</th>
+                                    <th className="px-6 py-4">Duration</th>
+                                    <th className="px-6 py-4">Reason</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {leaveRequests.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-medium">No leave requests found.</td>
+                                    </tr>
+                                ) : leaveRequests.map((req: any) => {
+                                    const start = new Date(req.start_date);
+                                    const end = new Date(req.end_date);
+                                    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+                                    
+                                    return (
+                                        <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap font-bold text-[#051C3F]">{req.type}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <p className="font-bold text-[#051C3F] text-sm">{days} {days === 1 ? 'Day' : 'Days'}</p>
+                                                <p className="text-xs text-gray-500 mt-0.5">
+                                                    {start.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} 
+                                                    {days > 1 && ` - ${end.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`}
+                                                </p>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-xs truncate text-gray-600" title={req.reason}>{req.reason}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                                    req.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                                    req.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                    'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                    {req.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                {req.status === 'pending' && (
+                                                    <button onClick={() => deleteLeave(req.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Request">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 

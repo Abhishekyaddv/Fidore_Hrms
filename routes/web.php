@@ -48,11 +48,13 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('leaves/holidays/{holiday}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'destroyHoliday'])->name('leaves.holidays.destroy');
         Route::post('leaves/policies', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storePolicy'])->name('leaves.policies.store');
         Route::patch('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'updateRequestStatus'])->name('leaves.requests.update');
+        Route::delete('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'destroyRequest'])->name('leaves.requests.destroy');
     });
 
     // Employee My Leaves
     Route::get('my-leaves', [\App\Http\Controllers\Employee\MyLeavesController::class, 'index'])->name('my-leaves.index')->middleware(\App\Http\Middleware\CheckBearerToken::class);
     Route::post('my-leaves', [\App\Http\Controllers\Employee\MyLeavesController::class, 'store'])->name('my-leaves.store')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+    Route::delete('my-leaves/{leaveRequest}', [\App\Http\Controllers\Employee\MyLeavesController::class, 'destroy'])->name('my-leaves.destroy')->middleware(\App\Http\Middleware\CheckBearerToken::class);
 
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::post('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update_info');

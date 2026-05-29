@@ -70,11 +70,31 @@ class MyLeavesController extends Controller
             'reason' => 'required|string',
         ]);
 
+        // Check for overlapping holidays
+        $overlappingHoliday = Holiday::where(function ($query) use ($validated) {
+            $query->whereBetween('date', [$validated['start_date'], $validated['end_date']]);
+        })->first();
+
+        if ($overlappingHoliday) {
+            return back()->withErrors(['start_date' => 'Your leave request overlaps with a public holiday: ' . $overlappingHoliday->name]);
+        }
+
         $validated['user_id'] = $request->user()->id;
         $validated['status'] = 'pending';
 
         LeaveRequest::create($validated);
 
         return redirect()->back()->with('success', 'Leave request submitted successfully.');
+    }
+
+    public function destroy(LeaveRequest $leaveRequest)
+    {
+        if ($leaveRequest->user_id !== request()->user()->id) {
+            abort(403);
+        }
+
+        $leaveRequest->delete();
+
+        return redirect()->back()->with('success', 'Leave request deleted successfully.');
     }
 }
