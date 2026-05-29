@@ -65,8 +65,8 @@ class DesignationController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'department' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'role' => 'required|string|in:employee,hr,superadmin',
         ]);
 
         $camelName = Str::camel($validated['name']);
@@ -79,8 +79,8 @@ class DesignationController extends Controller
         Designation::create([
             'name' => $camelName,
             'display_name' => $validated['name'],
-            'department' => $validated['department'],
             'description' => $validated['description'],
+            'role' => $validated['role'],
         ]);
 
         return redirect()->route('admin.designations.index')->with('success', 'Designation created successfully.');
@@ -95,8 +95,8 @@ class DesignationController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'department' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'role' => 'required|string|in:employee,hr,superadmin',
         ]);
 
         $camelName = Str::camel($validated['name']);
@@ -109,9 +109,12 @@ class DesignationController extends Controller
         $designation->update([
             'name' => $camelName,
             'display_name' => $validated['name'],
-            'department' => $validated['department'],
             'description' => $validated['description'],
+            'role' => $validated['role'],
         ]);
+
+        // Sync role to all users with this designation
+        User::where('designation_id', $designation->id)->update(['role' => $validated['role']]);
 
         return redirect()->route('admin.designations.index')->with('success', 'Designation updated successfully.');
     }

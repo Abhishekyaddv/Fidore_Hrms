@@ -48,8 +48,8 @@ interface Designation {
     id: number;
     name: string;
     display_name: string;
-    department: string;
     description: string | null;
+    role?: string;
     users_count: number;
     created_at: string;
     updated_at: string;
@@ -102,8 +102,8 @@ export default function Designations({
         clearErrors,
     } = useForm({
         name: '',
-        department: '',
         description: '',
+        role: 'employee',
     });
 
     // Handle search input change with Inertia routing
@@ -133,8 +133,8 @@ export default function Designations({
         setEditingDesignation(designation);
         setData({
             name: designation.display_name,
-            department: designation.department,
             description: designation.description || '',
+            role: designation.role || 'employee',
         });
         setIsOpen(true);
     };
@@ -283,7 +283,6 @@ export default function Designations({
                             <thead className="text-xs text-text-secondary uppercase bg-surface-2 border-b border-border font-semibold tracking-wider">
                                 <tr>
                                     <th scope="col" className="px-6 py-4">Designation Name</th>
-                                    <th scope="col" className="px-6 py-4">Department</th>
                                     <th scope="col" className="px-6 py-4">Headcount</th>
                                     <th scope="col" className="px-6 py-4 text-right">Actions</th>
                                 </tr>
@@ -310,9 +309,7 @@ export default function Designations({
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-text-secondary text-sm font-medium">
-                                                {designation.department}
-                                            </td>
+
                                             <td className="px-6 py-4 text-text-secondary text-sm">
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-2 text-text-secondary">
                                                     {designation.users_count}{' '}
@@ -433,35 +430,35 @@ export default function Designations({
 
                         {/* Department Select Field */}
                         <div className="space-y-2">
+                        {/* Access Role Field */}
+                        <div className="space-y-2">
                             <Label
-                                htmlFor="department"
+                                htmlFor="role"
                                 className="text-sm font-semibold text-text-secondary"
                             >
-                                Department
+                                Access Role
                             </Label>
                             <Select
-                                value={data.department}
-                                onValueChange={(value) => setData('department', value)}
+                                value={data.role}
+                                onValueChange={(value) => setData('role', value)}
                                 required
                             >
                                 <SelectTrigger
-                                    id="department"
+                                    id="role"
                                     className="h-11 border-border focus:ring-accent-500 text-left bg-transparent"
                                 >
-                                    <SelectValue placeholder="Select Department" />
+                                    <SelectValue placeholder="Select Access Role" />
                                 </SelectTrigger>
                                 <SelectContent className="border-border bg-surface-0">
-                                    {DEPARTMENTS.map((dept) => (
-                                        <SelectItem key={dept} value={dept}>
-                                            {dept}
-                                        </SelectItem>
-                                    ))}
+                                    <SelectItem value="employee">Standard Employee</SelectItem>
+                                    <SelectItem value="hr">HR / Admin</SelectItem>
+                                    <SelectItem value="superadmin">Super Admin</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {errors.department && (
+                            {errors.role && (
                                 <p className="text-xs font-semibold text-danger-text mt-1.5 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" />
-                                    {errors.department}
+                                    {errors.role}
                                 </p>
                             )}
                         </div>

@@ -169,7 +169,6 @@ export default function EmployeeDirectory({
                                     <thead className="bg-[#F8FAFC] border-b border-gray-200 text-gray-700 font-semibold text-xs tracking-wider uppercase">
                                         <tr>
                                             <th className="px-6 py-4 font-semibold text-[#051C3F]">Employee</th>
-                                            <th className="px-6 py-4 font-semibold text-[#051C3F]">Department</th>
                                             <th className="px-6 py-4 font-semibold text-[#051C3F]">Role</th>
                                             <th className="px-6 py-4 font-semibold text-[#051C3F]">Status</th>
                                             <th className="px-6 py-4 font-semibold text-[#051C3F] text-right">Actions</th>
@@ -193,9 +192,7 @@ export default function EmployeeDirectory({
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {emp.department || '-'}
-                                                </td>
+
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     {emp.designation?.display_name || emp.role}
                                                 </td>
@@ -214,20 +211,22 @@ export default function EmployeeDirectory({
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </button>
-                                                        <button 
-                                                            onClick={() => handleDelete(emp.id)}
-                                                            className="text-red-500 hover:text-red-700 transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
+                                                        {emp.role !== 'admin' && emp.role !== 'superadmin' && (
+                                                            <button 
+                                                                onClick={() => handleDelete(emp.id)}
+                                                                className="text-red-500 hover:text-red-700 transition-colors"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))}
                                         {filteredEmployees.length === 0 && (
                                             <tr>
-                                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                                                     No employees found.
                                                 </td>
                                             </tr>

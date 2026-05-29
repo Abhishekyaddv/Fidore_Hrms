@@ -78,27 +78,32 @@ class EmployeeController extends Controller
                 'regex:/^EMP-\d+$/' // Must start with EMP- followed by numbers
             ],
             'designation_id' => 'nullable|exists:designations,id',
-            'department' => 'required|string|max:255',
             'joining_date' => 'required|date',
             'employment_type' => 'required|string|in:Full-time,Probation,Intern',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
-            'role' => 'required|string|in:hr,employee', // Only allow superadmin/hr to create hr or employee roles
         ], [
             'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
         ]);
+
+        $role = 'employee';
+        if ($request->designation_id) {
+            $designation = Designation::find($request->designation_id);
+            if ($designation) {
+                $role = $designation->role;
+            }
+        }
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'role' => $role,
             'designation_id' => $request->designation_id,
             'dob' => $request->dob,
             'gender' => $request->gender,
             'phone' => $request->phone,
             'employee_id' => $request->employee_id,
-            'department' => $request->department,
             'joining_date' => $request->joining_date,
             'employment_type' => $request->employment_type,
         ]);
@@ -125,7 +130,6 @@ class EmployeeController extends Controller
                 'regex:/^EMP-\d+$/'
             ],
             'designation_id' => 'nullable|exists:designations,id',
-            'department' => 'required|string|max:255',
             'joining_date' => 'required|date',
             'employment_type' => 'required|string|in:Full-time,Probation,Intern',
             'email' => [
@@ -136,21 +140,27 @@ class EmployeeController extends Controller
                 Rule::unique('users')->ignore($employee->id),
             ],
             'password' => 'nullable|string|min:8',
-            'role' => 'required|string|in:hr,employee', // Only allow superadmin/hr to assign hr or employee roles
         ], [
             'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
         ]);
 
+        $role = 'employee';
+        if ($request->designation_id) {
+            $designation = Designation::find($request->designation_id);
+            if ($designation) {
+                $role = $designation->role;
+            }
+        }
+
         $data = [
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'role' => $role,
             'designation_id' => $request->designation_id,
             'dob' => $request->dob,
             'gender' => $request->gender,
             'phone' => $request->phone,
             'employee_id' => $request->employee_id,
-            'department' => $request->department,
             'joining_date' => $request->joining_date,
             'employment_type' => $request->employment_type,
         ];

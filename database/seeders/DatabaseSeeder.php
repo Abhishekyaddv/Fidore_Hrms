@@ -16,36 +16,36 @@ class DatabaseSeeder extends Seeder
         $engDesignation = Designation::create([
             'name' => 'seniorSoftwareEngineer',
             'display_name' => 'Senior Software Engineer',
-            'department' => 'Engineering',
             'description' => 'Oversees core software engineering projects and technical stack decisions.',
+            'role' => 'employee',
         ]);
 
         $hrDesignation = Designation::create([
             'name' => 'hrManager',
             'display_name' => 'HR Manager',
-            'department' => 'People Operations',
             'description' => 'Manages human resource initiatives and workplace culture.',
+            'role' => 'hr',
         ]);
 
         $uiDesignation = Designation::create([
             'name' => 'uiDesigner',
             'display_name' => 'UI Designer',
-            'department' => 'Design',
             'description' => 'Responsible for crafting aesthetic and user-friendly digital designs.',
+            'role' => 'employee',
         ]);
 
         $mktDesignation = Designation::create([
             'name' => 'marketingAssociate',
             'display_name' => 'Marketing Associate',
-            'department' => 'Growth',
             'description' => 'Executes campaigns and growth strategies across digital channels.',
+            'role' => 'employee',
         ]);
 
         $cfoDesignation = Designation::create([
             'name' => 'chiefFinancialOfficer',
             'display_name' => 'Chief Financial Officer',
-            'department' => 'Finance',
             'description' => 'Drives financial strategy, planning, and accounting operations.',
+            'role' => 'employee',
         ]);
 
         // Create Admin
@@ -59,17 +59,17 @@ class DatabaseSeeder extends Seeder
         // Create some employees and link to designations
         User::factory(5)->create([
             'designation_id' => $engDesignation->id,
-            'role' => 'employee',
+            'role' => $engDesignation->role,
         ]);
 
         User::factory(2)->create([
             'designation_id' => $uiDesignation->id,
-            'role' => 'employee',
+            'role' => $uiDesignation->role,
         ]);
 
         User::factory(1)->create([
             'designation_id' => $hrDesignation->id,
-            'role' => 'employee',
+            'role' => $hrDesignation->role,
         ]);
     }
 }

@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('designations', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('display_name');
-            $table->text('description')->nullable();
-            $table->timestamps();
+        Schema::table('designations', function (Blueprint $table) {
+            $table->string('role')->default('employee');
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('designations');
+        Schema::table('designations', function (Blueprint $table) {
+            $table->dropColumn('role');
+        });
     }
 };

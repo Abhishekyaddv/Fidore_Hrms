@@ -16,8 +16,7 @@ return new class extends Migration
             $table->string('gender')->nullable()->after('dob');
             $table->string('phone')->nullable()->after('gender');
             $table->string('employee_id')->nullable()->unique()->after('phone');
-            $table->string('department')->nullable()->after('employee_id');
-            $table->date('joining_date')->nullable()->after('department');
+            $table->date('joining_date')->nullable()->after('employee_id');
             $table->string('employment_type')->nullable()->after('joining_date');
         });
     }
@@ -33,7 +32,6 @@ return new class extends Migration
                 'gender',
                 'phone',
                 'employee_id',
-                'department',
                 'joining_date',
                 'employment_type',
             ]);

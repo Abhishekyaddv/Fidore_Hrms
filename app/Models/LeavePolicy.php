@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class LeavePolicy extends Model
+{
+    protected $fillable = [
+        'employment_type',
+        'cl',
+        'sl',
+        'el',
+    ];
+}

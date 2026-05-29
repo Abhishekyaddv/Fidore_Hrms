@@ -16,16 +16,15 @@ import AppLogoIcon from './app-logo-icon';
 
 const adminNavItems: NavItem[] = [
     { title: 'Dashboard',          url: '/dashboard',    icon: LayoutGrid },
+    { title: 'Leave Management',   url: '/admin/leaves', icon: Calendar   },
     { title: 'Designations',       url: '/admin/designations', icon: Briefcase  },
-    { title: 'My Leave',           url: '#',                   icon: Calendar   },
     { title: 'Employee Directory', url: '/admin/employees',    icon: Users      },
     { title: 'My Profile',         url: '/profile',            icon: User       },
-    { title: 'Settings',           url: '#',                   icon: Settings   },
 ];
 
 const employeeNavItems: NavItem[] = [
     { title: 'Dashboard',  url: '/dashboard', icon: LayoutGrid },
-    { title: 'My Leave',   url: '#',          icon: Calendar   },
+    { title: 'My Leaves',  url: '/my-leaves', icon: Calendar   },
     { title: 'My Profile', url: '/profile',   icon: User       },
 ];
 

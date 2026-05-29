@@ -65,12 +65,10 @@ export function AddEmployeeModal({
         phone: employee?.phone || '',
         employee_id: employee?.employee_id || nextEmployeeId || '',
         designation_id: employee?.designation_id?.toString() || '',
-        department: employee?.department || '',
         joining_date: employee?.joining_date || new Date().toISOString().split('T')[0],
         employment_type: employee?.employment_type || 'Full-time',
         email: employee?.email || '',
         password: '',
-        role: employee?.role || 'employee',
     });
 
     // Update Employee ID when nextEmployeeId changes (on successful creations)
@@ -85,12 +83,10 @@ export function AddEmployeeModal({
                 phone: employee.phone || '',
                 employee_id: employee.employee_id || '',
                 designation_id: employee.designation_id?.toString() || '',
-                department: employee.department || '',
                 joining_date: employee.joining_date || '',
                 employment_type: employee.employment_type || 'Full-time',
                 email: employee.email || '',
                 password: '',
-                role: employee.role || 'employee',
             });
         }
     }, [nextEmployeeId, isOpen, isEditMode, employee]);
@@ -285,35 +281,6 @@ export function AddEmployeeModal({
                                 )}
                             </div>
 
-                            {/* Department */}
-                            <div className="space-y-1.5">
-                                <Label htmlFor="department" className="text-xs font-semibold text-text-secondary">
-                                    Department
-                                </Label>
-                                <Select
-                                    value={data.department}
-                                    onValueChange={(value) => setData('department', value)}
-                                    required
-                                >
-                                    <SelectTrigger
-                                        id="department"
-                                        className="h-10 border-border focus:ring-accent-500 bg-transparent text-left text-text-primary"
-                                    >
-                                        <SelectValue placeholder="Select Department" />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-border bg-surface-0">
-                                        {DEPARTMENTS.map((dept) => (
-                                            <SelectItem key={dept} value={dept}>
-                                                {dept}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.department && (
-                                    <p className="text-xs font-medium text-danger-text">{errors.department}</p>
-                                )}
-                            </div>
-
                             {/* Date of Joining */}
                             <div className="space-y-1.5">
                                 <Label htmlFor="joining_date" className="text-xs font-semibold text-text-secondary">
@@ -416,31 +383,6 @@ export function AddEmployeeModal({
                                 />
                                 {errors.password && (
                                     <p className="text-xs font-medium text-danger-text">{errors.password}</p>
-                                )}
-                            </div>
-
-                            {/* Access Role */}
-                            <div className="space-y-1.5">
-                                <Label htmlFor="role" className="text-xs font-semibold text-text-secondary">
-                                    Access Role
-                                </Label>
-                                <Select
-                                    value={data.role}
-                                    onValueChange={(value) => setData('role', value)}
-                                >
-                                    <SelectTrigger
-                                        id="role"
-                                        className="h-10 border-border focus:ring-accent-500 bg-transparent text-left text-text-primary"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-border bg-surface-0">
-                                        <SelectItem value="hr">HR</SelectItem>
-                                        <SelectItem value="employee">Standard Employee</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {errors.role && (
-                                    <p className="text-xs font-medium text-danger-text">{errors.role}</p>
                                 )}
                             </div>
                         </div>

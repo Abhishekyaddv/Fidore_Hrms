@@ -28,7 +28,6 @@ class User extends Authenticatable
         'gender',
         'phone',
         'employee_id',
-        'department',
         'joining_date',
         'employment_type',
         'bio',
@@ -58,6 +57,14 @@ class User extends Authenticatable
     public function designation()
     {
         return $this->belongsTo(Designation::class);
+    }
+
+    /**
+     * Get the leave requests of the user.
+     */
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
     }
 
     /**
