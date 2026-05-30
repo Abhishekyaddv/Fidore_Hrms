@@ -68,6 +68,7 @@ class MyLeavesController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         // Check for overlapping holidays
@@ -81,6 +82,11 @@ class MyLeavesController extends Controller
 
         $validated['user_id'] = $request->user()->id;
         $validated['status'] = 'pending';
+
+        if ($request->hasFile('document')) {
+            $path = $request->file('document')->store('leave_docs', 'public');
+            $validated['document_path'] = $path;
+        }
 
         LeaveRequest::create($validated);
 

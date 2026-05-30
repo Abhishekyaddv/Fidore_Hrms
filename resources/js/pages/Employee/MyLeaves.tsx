@@ -19,6 +19,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
         start_date: '',
         end_date: '',
         reason: '',
+        document: null as File | null,
     });
 
     const submitLeave = (e: React.FormEvent) => {
@@ -157,6 +158,12 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                                     <Label>Reason</Label>
                                     <Input value={data.reason} onChange={e => setData('reason', e.target.value)} placeholder="Reason for leave" required />
                                     {errors.reason && <p className="text-xs text-red-500">{errors.reason}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Supporting Document (Optional)</Label>
+                                    <Input type="file" onChange={e => setData('document', e.target.files ? e.target.files[0] : null)} accept=".pdf,.jpg,.jpeg,.png" />
+                                    <p className="text-xs text-gray-500">Max 5MB. Allowed formats: PDF, JPG, PNG.</p>
+                                    {errors.document && <p className="text-xs text-red-500">{errors.document}</p>}
                                 </div>
                                 <Button type="submit" disabled={processing} className="w-full bg-brand-600">Submit Request</Button>
                             </form>
@@ -298,7 +305,14 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                                                     {days > 1 && ` - ${end.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`}
                                                 </p>
                                             </td>
-                                            <td className="px-6 py-4 max-w-xs truncate text-gray-600" title={req.reason}>{req.reason}</td>
+                                            <td className="px-6 py-4 max-w-xs text-gray-600">
+                                                <p className="truncate" title={req.reason}>{req.reason}</p>
+                                                {req.document_path && (
+                                                    <a href={`/storage/${req.document_path}`} target="_blank" className="text-xs font-bold text-[#4CB5F9] hover:underline mt-1 inline-block">
+                                                        View Document
+                                                    </a>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                                     req.status === 'approved' ? 'bg-green-100 text-green-700' :

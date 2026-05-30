@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Mail, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Mail, Pencil, Plus, Settings2, Trash2, X, Eye, Paperclip } from 'lucide-react';
 import { useState } from 'react';
 
 export default function LeaveManagement({ holidays, policies, leaveRequests }: any) {
@@ -350,6 +350,20 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                             <p className="text-sm text-gray-600">{editingRequest.type}</p>
                                         </div>
                                         <div className="space-y-2">
+                                            <Label>Reason</Label>
+                                            <p className="text-sm text-gray-600">{editingRequest.reason}</p>
+                                        </div>
+                                        {editingRequest.document_path && (
+                                            <div className="space-y-2">
+                                                <Label>Supporting Document</Label>
+                                                <div>
+                                                    <a href={`/storage/${editingRequest.document_path}`} target="_blank" className="text-sm font-bold text-[#4CB5F9] hover:underline">
+                                                        View Document
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="space-y-2">
                                             <Label>Status</Label>
                                             <Select value={editStatus} onValueChange={setEditStatus}>
                                                 <SelectTrigger>
@@ -555,7 +569,15 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">{getLeaveBadge(req.type)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {getLeaveBadge(req.type)}
+                                                    {req.document_path && (
+                                                        <a href={`/storage/${req.document_path}`} target="_blank" className="mt-2 flex items-center gap-1 text-[11px] font-bold text-[#4CB5F9] hover:underline" title="View Attachment">
+                                                            <Paperclip className="h-3 w-3" />
+                                                            Attachment
+                                                        </a>
+                                                    )}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <p className="text-sm font-bold text-[#051C3F]">
                                                         {days} {days === 1 ? 'Day' : 'Days'}
@@ -604,6 +626,13 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                                                     title="Reject"
                                                                 >
                                                                     <X className="h-4 w-4 stroke-[3]" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => openEditModal(req)}
+                                                                    className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm transition-colors hover:bg-gray-50"
+                                                                    title="View Details"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
                                                                 </button>
                                                             </>
                                                         ) : (

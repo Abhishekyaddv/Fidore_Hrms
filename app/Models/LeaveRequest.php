@@ -14,6 +14,7 @@ class LeaveRequest extends Model
         'reason',
         'status',
         'admin_remarks',
+        'document_path',
     ];
 
     public function user()
