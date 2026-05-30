@@ -1,10 +1,61 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
-import { Download, MoreVertical, Plus, Users, CalendarX, MapPin, CheckCircle2 } from 'lucide-react';
+import { Head, usePage, router, Link } from '@inertiajs/react';
+import { Download, MoreVertical, Plus, Users, CalendarX, MapPin, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AddEmployeeModal } from '@/components/add-employee-modal';
+
+interface Designation {
+    id: number;
+    name: string;
+    display_name: string;
+    department: string;
+}
+
+interface Attendance {
+    id: number;
+    user_id: number;
+    date: string;
+    punch_in: string | null;
+    punch_out: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+interface LeaveRequest {
+    id: number;
+    user_id: number;
+    type: string;
+    start_date: string;
+    end_date: string;
+    reason: string;
+    status: string;
+    created_at: string;
+    user?: {
+        name: string;
+        designation?: Designation | null;
+    };
+}
+
+interface Stats {
+    totalEmployees: number;
+    newEmployeesThisMonth: number;
+    pendingLeaves: number;
+    presentCount: number;
+    leaveCount: number;
+    lateCount: number;
+    absentCount: number;
+    presentPercentage: number;
+}
+
+interface AdminDashboardProps {
+    designations: Designation[];
+    nextEmployeeId: string;
+    todayAttendance: Attendance | null;
+    stats: Stats;
+    recentLeaveRequests: LeaveRequest[];
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -16,12 +67,96 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function AdminDashboard({
     designations,
     nextEmployeeId,
-}: {
-    designations: any[];
-    nextEmployeeId: string;
-}) {
+    todayAttendance,
+    stats,
+    recentLeaveRequests = [],
+}: AdminDashboardProps) {
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
     const { auth } = usePage<SharedData>().props;
+    const [currentTime, setCurrentTime] = useState('');
+    const [currentDate, setCurrentDate] = useState('');
+
+    // Update real-time clock
+    useEffect(() => {
+        const updateTime = () => {
+            const now = new Date();
+            // Format time
+            setCurrentTime(
+                now.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true,
+                })
+            );
+            // Format date
+            setCurrentDate(
+                now.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                })
+            );
+        };
+
+        updateTime();
+        const interval = setInterval(updateTime, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const formatTime = (isoString: string | null) => {
+        if (!isoString) return '';
+        try {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (e) {
+            return '';
+        }
+    };
+
+    const handlePunch = () => {
+        if (!todayAttendance || !todayAttendance.punch_in) {
+            router.post(route('attendance.punch-in'), {}, {
+                preserveScroll: true,
+            });
+        } else if (!todayAttendance.punch_out) {
+            router.post(route('attendance.punch-out'), {}, {
+                preserveScroll: true,
+            });
+        }
+    };
+
+    const getPunchButtonState = () => {
+        if (!todayAttendance || !todayAttendance.punch_in) {
+            return {
+                text: 'PUNCH IN',
+                disabled: false,
+                className: 'w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+                icon: <MapPin className="h-4 w-4" />
+            };
+        }
+        if (!todayAttendance.punch_out) {
+            return {
+                text: 'PUNCH OUT',
+                disabled: false,
+                className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+                icon: <Clock className="h-4 w-4" />
+            };
+        }
+        return {
+            text: 'COMPLETED',
+            disabled: true,
+            className: 'w-full sm:w-auto bg-emerald-600 opacity-80 text-surface-0 font-semibold cursor-not-allowed h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+            icon: <CheckCircle2 className="h-4 w-4" />
+        };
+    };
+
+    const buttonState = getPunchButtonState();
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -46,35 +181,59 @@ export default function AdminDashboard({
                 {/* Top Grid - Punch In & Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Punch In Card */}
-                    <div className="md:col-span-2 rounded-xl border border-border bg-surface-0 flex overflow-hidden shadow-xs">
+                    <div className="md:col-span-2 rounded-xl border border-border bg-surface-0 flex flex-col sm:flex-row overflow-hidden shadow-xs">
                         <div className="p-6 flex flex-col justify-between flex-1">
                             <div>
-                                <span className="inline-flex items-center rounded-full bg-info-bg px-2.5 py-1 text-xs font-semibold text-info-text mb-4">Live Status</span>
-                                <h2 className="text-xl font-bold text-text-primary mb-1">Punch In / Out</h2>
-                                <p className="text-sm text-text-secondary">Current Location: 123 Tech Avenue, Innovation City</p>
+                                <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text mb-4">
+                                    <Clock className="mr-1 h-3.5 w-3.5" /> Working Hours
+                                </span>
+                                <h2 className="text-xl font-bold text-text-primary mb-1">Attendance Punch</h2>
+                                <p className="text-sm text-text-secondary">Log your daily work hours from your registered location.</p>
                             </div>
                             
                             <div className="mt-8 flex items-end gap-6 mb-8">
-                                <div className="text-3xl font-bold text-text-primary font-mono">
-                                    06:44
-                                    <span className="text-sm font-normal text-text-muted ml-1">AM</span>
+                                <div className="text-3xl font-bold text-text-primary font-mono tracking-tight">
+                                    {currentTime || '00:00:00 AM'}
                                 </div>
                                 <div className="text-sm text-text-secondary pb-1 border-l pl-4 border-border">
-                                    Monday, Oct 24, 2023
+                                    {currentDate || 'Loading date...'}
                                 </div>
                             </div>
 
-                            <Button className="w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-white h-12 text-sm font-semibold tracking-wider cursor-pointer shadow-xs">
-                                <MapPin className="mr-2 h-4 w-4" /> PUNCH IN
-                            </Button>
+                            {todayAttendance && (todayAttendance.punch_in || todayAttendance.punch_out) && (
+                                <div className="flex flex-wrap gap-4 text-xs font-semibold mb-6 text-text-secondary bg-surface-1 p-3 rounded-lg border border-border w-fit">
+                                    {todayAttendance.punch_in && (
+                                        <div>
+                                            <span className="text-text-muted">PUNCHED IN: </span>
+                                            <span className="text-success-text font-mono">{formatTime(todayAttendance.punch_in)}</span>
+                                        </div>
+                                    )}
+                                    {todayAttendance.punch_out && (
+                                        <div className="border-l border-border pl-4">
+                                            <span className="text-text-muted">PUNCHED OUT: </span>
+                                            <span className="text-danger-text font-mono">{formatTime(todayAttendance.punch_out)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handlePunch}
+                                disabled={buttonState.disabled}
+                                className={buttonState.className}
+                            >
+                                {buttonState.icon} {buttonState.text}
+                            </button>
                         </div>
-                        <div className="hidden md:block w-1/2 bg-surface-2 relative">
-                            {/* Map placeholder */}
-                            <div className="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMzl2MWg0MHYtMXpNMCBwaDF2NDBIMHoiIGZpbGw9IiNjdXJyZW50Q29sb3IiLz4KPC9zdmc+')] mix-blend-multiply dark:mix-blend-overlay"></div>
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div className="bg-brand-600 p-2.5 rounded-full border-4 border-surface-0 shadow-lg animate-pulse">
+                        <div className="hidden sm:block w-1/3 bg-surface-2 relative border-l border-border">
+                            <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMzl2MWg0MHYtMXpNMCBwaDF2NDBIMHoiIGZpbGw9IiNjdXJyZW50Q29sb3IiLz4KPC9zdmc+')] mix-blend-multiply dark:mix-blend-overlay"></div>
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center space-y-2">
+                                <div className="bg-emerald-600 p-2.5 rounded-full border-4 border-white shadow-lg inline-block animate-pulse">
                                     <MapPin className="text-white h-5 w-5" />
                                 </div>
+                                <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                                    Inside Office GPS
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -85,16 +244,16 @@ export default function AdminDashboard({
                         <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-sm font-medium text-text-secondary">Total Employees</p>
-                                    <h3 className="text-3xl font-bold text-text-primary mt-2">1,284</h3>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Total Employees</p>
+                                    <h3 className="text-3xl font-bold text-text-primary mt-2">{stats.totalEmployees.toLocaleString()}</h3>
                                 </div>
                                 <div className="p-3 bg-brand-50 rounded-lg">
                                     <Users className="h-5 w-5 text-brand-600" />
                                 </div>
                             </div>
-                            <div className="mt-4 flex items-center text-sm font-medium text-success-text">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                +12 this month
+                            <div className="mt-4 flex items-center text-sm font-semibold text-success-text">
+                                <svg className="w-4 h-4 mr-1 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                +{stats.newEmployeesThisMonth} this month
                             </div>
                         </div>
 
@@ -102,14 +261,14 @@ export default function AdminDashboard({
                         <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-sm font-medium text-text-secondary">Pending Leaves</p>
-                                    <h3 className="text-3xl font-bold text-text-primary mt-2">24</h3>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Pending Leaves</p>
+                                    <h3 className="text-3xl font-bold text-text-primary mt-2">{stats.pendingLeaves}</h3>
                                 </div>
                                 <div className="p-3 bg-danger-bg rounded-lg">
                                     <CalendarX className="h-5 w-5 text-danger-text" />
                                 </div>
                             </div>
-                            <div className="mt-4 text-sm font-medium text-danger-text">
+                            <div className="mt-4 text-xs font-semibold text-danger-text">
                                 Requires immediate action
                             </div>
                         </div>
@@ -132,10 +291,21 @@ export default function AdminDashboard({
                         <div className="relative w-48 h-48 flex items-center justify-center">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-2" />
-                                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="37.68" className="text-brand-600 dark:text-accent-500" strokeLinecap="round" />
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="8"
+                                    strokeDasharray="251.2"
+                                    strokeDashoffset={251.2 * (1 - stats.presentPercentage / 100)}
+                                    className="text-brand-600 dark:text-accent-500"
+                                    strokeLinecap="round"
+                                />
                             </svg>
                             <div className="absolute flex flex-col items-center justify-center text-center">
-                                <span className="text-3xl font-bold text-text-primary">85%</span>
+                                <span className="text-3xl font-bold text-text-primary">{stats.presentPercentage}%</span>
                                 <span className="text-xs font-bold text-text-muted tracking-wider">PRESENT</span>
                             </div>
                         </div>
@@ -144,19 +314,19 @@ export default function AdminDashboard({
                         <div className="grid grid-cols-2 gap-4 flex-1 w-full">
                             <div className="bg-surface-2 p-4 rounded-lg">
                                 <p className="text-xs font-semibold text-text-secondary mb-1">Present</p>
-                                <p className="text-xl font-bold text-text-primary">1,092</p>
+                                <p className="text-xl font-bold text-text-primary">{stats.presentCount}</p>
                             </div>
                             <div className="bg-surface-2 p-4 rounded-lg">
                                 <p className="text-xs font-semibold text-text-secondary mb-1">On Leave</p>
-                                <p className="text-xl font-bold text-accent-700 dark:text-accent-500">42</p>
+                                <p className="text-xl font-bold text-accent-700 dark:text-accent-500">{stats.leaveCount}</p>
                             </div>
                             <div className="bg-surface-2 p-4 rounded-lg">
                                 <p className="text-xs font-semibold text-text-secondary mb-1">Late Arrivals</p>
-                                <p className="text-xl font-bold text-warning-text">18</p>
+                                <p className="text-xl font-bold text-warning-text">{stats.lateCount}</p>
                             </div>
                             <div className="bg-surface-2 p-4 rounded-lg">
                                 <p className="text-xs font-semibold text-text-secondary mb-1">Absent</p>
-                                <p className="text-xl font-bold text-danger-text">132</p>
+                                <p className="text-xl font-bold text-danger-text">{stats.absentCount}</p>
                             </div>
                         </div>
                     </div>
@@ -166,7 +336,7 @@ export default function AdminDashboard({
                 <div className="rounded-xl border border-border bg-surface-0 overflow-hidden shadow-xs">
                     <div className="p-6 flex justify-between items-center border-b border-border">
                         <h2 className="text-lg font-bold text-text-primary">Recent Leave Requests</h2>
-                        <a href="#" className="text-sm font-medium text-accent-700 dark:text-accent-500 hover:underline">View All</a>
+                        <Link href={route('admin.leaves.index')} className="text-sm font-medium text-accent-700 dark:text-accent-500 hover:underline">View All</Link>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -180,57 +350,79 @@ export default function AdminDashboard({
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr className="bg-surface-0 border-b border-border hover:bg-surface-1 transition-colors">
-                                    <td className="px-6 py-4 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 dark:text-brand-900 flex items-center justify-center font-bold text-xs">JD</div>
-                                        <div>
-                                            <div className="font-semibold text-text-primary">Jane Doe</div>
-                                            <div className="text-xs text-text-muted">UI Designer</div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-text-secondary">Annual Leave</td>
-                                    <td className="px-6 py-4 text-text-secondary">Oct 28 - Oct 30</td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text">Approved</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="text-text-muted hover:text-text-primary transition-all cursor-pointer"><MoreVertical className="h-5 w-5 ml-auto" /></button>
-                                    </td>
-                                </tr>
-                                <tr className="bg-surface-0 border-b border-border hover:bg-surface-1 transition-colors">
-                                    <td className="px-6 py-4 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-surface-2 text-text-secondary flex items-center justify-center font-bold text-xs">JS</div>
-                                        <div>
-                                            <div className="font-semibold text-text-primary">John Smith</div>
-                                            <div className="text-xs text-text-muted">Backend Developer</div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-text-secondary">Sick Leave</td>
-                                    <td className="px-6 py-4 text-text-secondary">Oct 24 - Oct 24</td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center rounded-full bg-warning-bg px-2.5 py-1 text-xs font-semibold text-warning-text">Pending</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="text-text-muted hover:text-text-primary transition-all cursor-pointer"><MoreVertical className="h-5 w-5 ml-auto" /></button>
-                                    </td>
-                                </tr>
-                                <tr className="bg-surface-0 hover:bg-surface-1 transition-colors">
-                                    <td className="px-6 py-4 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-success-bg text-success-text flex items-center justify-center font-bold text-xs">MB</div>
-                                        <div>
-                                            <div className="font-semibold text-text-primary">Marcus Brown</div>
-                                            <div className="text-xs text-text-muted">HR Specialist</div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-text-secondary">Maternity Leave</td>
-                                    <td className="px-6 py-4 text-text-secondary">Nov 1 - Feb 1</td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center rounded-full bg-danger-bg px-2.5 py-1 text-xs font-semibold text-danger-text">Rejected</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="text-text-muted hover:text-text-primary transition-all cursor-pointer"><MoreVertical className="h-5 w-5 ml-auto" /></button>
-                                    </td>
-                                </tr>
+                                {recentLeaveRequests.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-text-secondary font-medium">
+                                            No recent leave requests found.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    recentLeaveRequests.map((req) => {
+                                        const initials = req.user?.name
+                                            ? req.user.name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
+                                            : '??';
+
+                                        const formatLeaveDate = (dateStr: string) => {
+                                            try {
+                                                const d = new Date(dateStr);
+                                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                            } catch (e) {
+                                                return dateStr;
+                                            }
+                                        };
+
+                                        const startFormatted = formatLeaveDate(req.start_date);
+                                        const endFormatted = formatLeaveDate(req.end_date);
+                                        const dateRange = startFormatted === endFormatted ? startFormatted : `${startFormatted} - ${endFormatted}`;
+
+                                        const getStatusBadge = (status: string) => {
+                                            switch (status.toLowerCase()) {
+                                                case 'approved':
+                                                    return (
+                                                        <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text">
+                                                            Approved
+                                                        </span>
+                                                    );
+                                                case 'rejected':
+                                                    return (
+                                                        <span className="inline-flex items-center rounded-full bg-danger-bg px-2.5 py-1 text-xs font-semibold text-danger-text">
+                                                            Rejected
+                                                        </span>
+                                                    );
+                                                default:
+                                                    return (
+                                                        <span className="inline-flex items-center rounded-full bg-warning-bg px-2.5 py-1 text-xs font-semibold text-warning-text">
+                                                            Pending
+                                                        </span>
+                                                    );
+                                            }
+                                        };
+
+                                        return (
+                                            <tr key={req.id} className="bg-surface-0 border-b border-border hover:bg-surface-1 transition-colors">
+                                                <td className="px-6 py-4 flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 dark:text-brand-900 flex items-center justify-center font-bold text-xs">
+                                                        {initials}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-text-primary">{req.user?.name || 'Unknown User'}</div>
+                                                        <div className="text-xs text-text-muted">{req.user?.designation?.display_name || 'Employee'}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-text-secondary">{req.type}</td>
+                                                <td className="px-6 py-4 text-text-secondary">{dateRange}</td>
+                                                <td className="px-6 py-4">
+                                                    {getStatusBadge(req.status)}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button className="text-text-muted hover:text-text-primary transition-all cursor-pointer">
+                                                        <MoreVertical className="h-5 w-5 ml-auto" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -67,7 +67,7 @@ export default function EmployeeDirectory({
 
     return (
         <SidebarProvider>
-            <AppSidebar user={user} />
+            <AppSidebar />
             <div className="flex w-full flex-col bg-[#F9FAFB] min-h-screen">
                 <Head title="Employee Directory" />
                 

@@ -98,7 +98,6 @@ export default function Profile({ user, manager }: ProfileProps) {
                 preserveScroll: true,
                 onSuccess: () => {
                     console.log('Request successful');
-                    setAvatarFile(null);
                 },
                 onError: (errors) => console.error('Request errors:', errors),
             });

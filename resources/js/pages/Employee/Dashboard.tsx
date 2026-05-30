@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import {
     Briefcase,
     Building2,
@@ -30,8 +30,40 @@ interface Employee {
     designation: Designation | null;
 }
 
+interface Attendance {
+    id: number;
+    user_id: number;
+    date: string;
+    punch_in: string | null;
+    punch_out: string | null;
+    minutes_late?: number | null;
+    created_at: string;
+    updated_at: string;
+}
+
+interface Holiday {
+    id: number;
+    name: string;
+    date: string;
+    description: string | null;
+}
+
+interface LeaveRequest {
+    id: number;
+    user_id: number;
+    type: string;
+    start_date: string;
+    end_date: string;
+    reason: string;
+    status: string;
+}
+
 interface DashboardProps {
     employee: Employee;
+    todayAttendance: Attendance | null;
+    monthAttendances?: Attendance[];
+    holidays?: Holiday[];
+    leaveRequests?: LeaveRequest[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -41,7 +73,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard({ employee }: DashboardProps) {
+export default function Dashboard({
+    employee,
+    todayAttendance,
+    monthAttendances = [],
+    holidays = [],
+    leaveRequests = [],
+}: DashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
@@ -75,6 +113,152 @@ export default function Dashboard({ employee }: DashboardProps) {
         return () => clearInterval(interval);
     }, []);
 
+    const formatTime = (isoString: string | null) => {
+        if (!isoString) return '';
+        try {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (e) {
+            return '';
+        }
+    };
+
+    const handlePunch = () => {
+        if (!todayAttendance || !todayAttendance.punch_in) {
+            router.post(route('attendance.punch-in'), {}, {
+                preserveScroll: true,
+            });
+        } else if (!todayAttendance.punch_out) {
+            router.post(route('attendance.punch-out'), {}, {
+                preserveScroll: true,
+            });
+        }
+    };
+
+    const getPunchButtonState = () => {
+        if (!todayAttendance || !todayAttendance.punch_in) {
+            return {
+                text: 'PUNCH IN',
+                disabled: false,
+                className: 'w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+                icon: <MapPin className="h-4 w-4" />
+            };
+        }
+        if (!todayAttendance.punch_out) {
+            return {
+                text: 'PUNCH OUT',
+                disabled: false,
+                className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+                icon: <Clock className="h-4 w-4" />
+            };
+        }
+        return {
+            text: 'COMPLETED',
+            disabled: true,
+            className: 'w-full sm:w-auto bg-emerald-600 opacity-80 text-surface-0 font-semibold cursor-not-allowed h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+            icon: <CheckCircle className="h-4 w-4" />
+        };
+    };
+
+    const buttonState = getPunchButtonState();
+
+    // Calendar logic
+    const parsedDate = new Date();
+    const year = parsedDate.getFullYear();
+    const month = parsedDate.getMonth();
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    const renderMiniCalendarDays = () => {
+        const grid = [];
+        
+        // Empty slots
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            grid.push(<div key={`empty-${i}`} className="aspect-square bg-transparent"></div>);
+        }
+
+        const todayDateStr = new Date().toISOString().substring(0, 10);
+
+        // Days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isToday = dateStr === todayDateStr;
+
+            // Check if holiday
+            const holiday = holidays.find((h) => h.date === dateStr);
+            
+            // Check if leave
+            const leave = leaveRequests.find((l) => {
+                const start = new Date(l.start_date);
+                const end = new Date(l.end_date);
+                const current = new Date(dateStr);
+                return current >= start && current <= end;
+            });
+
+            // Check if attendance exists
+            const attendance = monthAttendances.find((a) => {
+                const attDate = typeof a.date === 'string' ? a.date.substring(0, 10) : '';
+                return attDate === dateStr;
+            });
+
+            let indicatorColor = '';
+            let tooltip = '';
+
+            if (holiday) {
+                indicatorColor = 'bg-purple-500';
+                tooltip = `Holiday: ${holiday.name}`;
+            } else if (leave) {
+                if (leave.status === 'approved') {
+                    indicatorColor = 'bg-emerald-500';
+                    tooltip = `Approved Leave: ${leave.type}`;
+                } else if (leave.status === 'pending') {
+                    indicatorColor = 'bg-amber-500';
+                    tooltip = `Pending Leave: ${leave.type}`;
+                } else {
+                    indicatorColor = 'bg-rose-500';
+                    tooltip = `Rejected Leave: ${leave.type}`;
+                }
+            } else if (attendance) {
+                indicatorColor = 'bg-green-600';
+                tooltip = `Present${attendance.minutes_late && attendance.minutes_late > 0 ? ` (${attendance.minutes_late}m late)` : ''}`;
+            }
+
+            grid.push(
+                <div 
+                    key={day} 
+                    className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-semibold relative hover:bg-surface-2 transition-colors cursor-pointer ${
+                        isToday ? 'bg-brand-50 text-brand-800 border border-brand-400/30' : 'text-text-primary'
+                    }`}
+                    title={tooltip || `${monthNames[month]} ${day}, ${year}`}
+                >
+                    <span>{day}</span>
+                    {indicatorColor && (
+                        <span className={`w-1.5 h-1.5 rounded-full absolute bottom-1 ${indicatorColor}`}></span>
+                    )}
+                </div>
+            );
+        }
+
+        // Fill remaining slots
+        const totalSlots = firstDayOfMonth + daysInMonth;
+        const remainingSlots = (7 - (totalSlots % 7)) % 7;
+        for (let i = 0; i < remainingSlots; i++) {
+            grid.push(<div key={`empty-end-${i}`} className="aspect-square bg-transparent"></div>);
+        }
+
+        return grid;
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Employee Dashboard" />
@@ -100,6 +284,14 @@ export default function Dashboard({ employee }: DashboardProps) {
                                 <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text mb-4">
                                     <Clock className="mr-1 h-3.5 w-3.5" /> Working Hours
                                 </span>
+                                {todayAttendance && todayAttendance.minutes_late && todayAttendance.minutes_late > 0 ? (
+                                    <div className="mb-4 p-3.5 rounded-xl bg-warning-bg text-warning-text border border-amber-500/20 text-sm flex items-center gap-3 animate-fade-in shadow-xs">
+                                        <div className="p-1.5 bg-amber-500/10 rounded-md">
+                                            <span className="text-base">⚠️</span>
+                                        </div>
+                                        <span className="font-semibold">You were {todayAttendance.minutes_late} minutes late today.</span>
+                                    </div>
+                                ) : null}
                                 <h2 className="text-xl font-bold text-text-primary mb-1">
                                     Attendance Punch
                                 </h2>
@@ -117,8 +309,29 @@ export default function Dashboard({ employee }: DashboardProps) {
                                 </div>
                             </div>
 
-                            <button className="w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none">
-                                <MapPin className="h-4 w-4" /> PUNCH IN
+                            {todayAttendance && (todayAttendance.punch_in || todayAttendance.punch_out) && (
+                                <div className="flex flex-wrap gap-4 text-xs font-semibold mb-6 text-text-secondary bg-surface-1 p-3 rounded-lg border border-border w-fit">
+                                    {todayAttendance.punch_in && (
+                                        <div>
+                                            <span className="text-text-muted">PUNCHED IN: </span>
+                                            <span className="text-success-text font-mono">{formatTime(todayAttendance.punch_in)}</span>
+                                        </div>
+                                    )}
+                                    {todayAttendance.punch_out && (
+                                        <div className="border-l border-border pl-4">
+                                            <span className="text-text-muted">PUNCHED OUT: </span>
+                                            <span className="text-danger-text font-mono">{formatTime(todayAttendance.punch_out)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handlePunch}
+                                disabled={buttonState.disabled}
+                                className={buttonState.className}
+                            >
+                                {buttonState.icon} {buttonState.text}
                             </button>
                         </div>
                         <div className="hidden sm:block w-1/3 bg-surface-2 relative border-l border-border">
@@ -178,25 +391,75 @@ export default function Dashboard({ employee }: DashboardProps) {
                     </div>
                 </div>
 
-                {/* Employee Specific Section (e.g. Leave Balance or Overview) */}
-                <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs">
-                    <div className="border-b border-border pb-4 mb-4 flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-text-primary">
-                            My Recent Activity
-                        </h2>
-                        <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                            ID: {employee.employee_id || 'N/A'}
-                        </span>
+                {/* Activity and Attendance Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left: Recent Activity */}
+                    <div className="lg:col-span-2 rounded-xl border border-border bg-surface-0 p-6 shadow-xs flex flex-col justify-between">
+                        <div>
+                            <div className="border-b border-border pb-4 mb-4 flex justify-between items-center">
+                                <h2 className="text-lg font-bold text-text-primary">
+                                    My Recent Activity
+                                </h2>
+                                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                                    ID: {employee.employee_id || 'N/A'}
+                                </span>
+                            </div>
+
+                            <div className="text-center py-12 text-text-secondary space-y-2">
+                                <Calendar className="h-10 w-10 mx-auto text-text-muted" />
+                                <h4 className="font-semibold text-[15px] text-text-primary">
+                                    No recent leave records or tasks found
+                                </h4>
+                                <p className="text-xs max-w-xs mx-auto">
+                                    When you log requests, submit timesheets, or check leaves, they will appear here.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="text-center py-10 text-text-secondary space-y-2">
-                        <Calendar className="h-10 w-10 mx-auto text-text-muted" />
-                        <h4 className="font-semibold text-[15px] text-text-primary">
-                            No recent leave records or tasks found
-                        </h4>
-                        <p className="text-xs max-w-xs mx-auto">
-                            When you log requests, submit timesheets, or check leaves, they will appear here.
-                        </p>
+                    {/* Right: Mini Calendar */}
+                    <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs flex flex-col">
+                        <div className="border-b border-border pb-4 mb-4 flex justify-between items-center">
+                            <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                                <Calendar className="h-5 w-5 text-brand-600" />
+                                Attendance Calendar
+                            </h2>
+                            <span className="text-xs font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-md">
+                                {monthNames[month]} {year}
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                                <div key={idx} className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                    {day}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 flex-1">
+                            {renderMiniCalendarDays()}
+                        </div>
+
+                        {/* Legend */}
+                        <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-semibold text-text-secondary">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-green-600"></span>
+                                Present
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Approved Leave
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                Pending Leave
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                Holiday
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

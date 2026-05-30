@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Holiday;
 use App\Models\LeavePolicy;
 use App\Models\LeaveRequest;
+use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -50,14 +51,48 @@ class MyLeavesController extends Controller
             ->take(3)
             ->get();
 
-        // All holidays for calendar
-        $holidays = Holiday::all();
+        // Support monthly pagination
+        $currentMonth = request('month', date('Y-m'));
+        try {
+            $carbonMonth = Carbon::parse($currentMonth);
+        } catch (\Exception $e) {
+            $carbonMonth = Carbon::now();
+            $currentMonth = $carbonMonth->format('Y-m');
+        }
+
+        $startOfMonth = $carbonMonth->copy()->startOfMonth()->toDateString();
+        $endOfMonth = $carbonMonth->copy()->endOfMonth()->toDateString();
+
+        // Filter holidays for the selected month
+        $holidays = Holiday::whereBetween('date', [$startOfMonth, $endOfMonth])->get();
+
+        // Filter leave requests for the selected month (for calendar display)
+        $leaveRequests = LeaveRequest::where('user_id', $user->id)
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                    ->orWhere(function ($q) use ($startOfMonth, $endOfMonth) {
+                        $q->where('start_date', '<=', $startOfMonth)
+                          ->where('end_date', '>=', $endOfMonth);
+                    });
+            })->get();
+
+        // Fetch user attendances for the selected month
+        $attendances = Attendance::where('user_id', $user->id)
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->get();
+
+        // All leave requests for the history table
+        $leaveHistory = $user->leaveRequests()->orderBy('start_date', 'desc')->get();
 
         return Inertia::render('Employee/MyLeaves', [
             'balances' => $balances,
             'upcomingHolidays' => $upcomingHolidays,
             'holidays' => $holidays,
-            'leaveRequests' => $user->leaveRequests,
+            'leaveRequests' => $leaveRequests,
+            'leaveHistory' => $leaveHistory,
+            'attendances' => $attendances,
+            'currentMonth' => $currentMonth,
         ]);
     }
 

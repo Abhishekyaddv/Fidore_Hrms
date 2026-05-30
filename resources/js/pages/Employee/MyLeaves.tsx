@@ -9,8 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar as CalendarIcon, Clock, Palmtree, Pill, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 
-export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRequests }: any) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRequests, leaveHistory = [], attendances = [], currentMonth }: any) {
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
     // Form
@@ -38,9 +37,10 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
         }
     };
 
-    // Calendar Logic
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    // Calendar Logic from currentMonth parameter
+    const parsedDate = currentMonth ? new Date(currentMonth + '-02') : new Date();
+    const year = parsedDate.getFullYear();
+    const month = parsedDate.getMonth();
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -48,8 +48,46 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
     const monthNames = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"];
 
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+    const prevMonth = () => {
+        const targetDate = new Date(year, month - 1, 2);
+        const targetMonthStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+        router.visit(route('my-leaves.index', { month: targetMonthStr }), {
+            preserveState: true,
+            only: ['holidays', 'leaveRequests', 'attendances', 'currentMonth'],
+        });
+    };
+
+    const nextMonth = () => {
+        const targetDate = new Date(year, month + 1, 2);
+        const targetMonthStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+        router.visit(route('my-leaves.index', { month: targetMonthStr }), {
+            preserveState: true,
+            only: ['holidays', 'leaveRequests', 'attendances', 'currentMonth'],
+        });
+    };
+
+    const goToToday = () => {
+        const targetDate = new Date();
+        const targetMonthStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+        router.visit(route('my-leaves.index', { month: targetMonthStr }), {
+            preserveState: true,
+            only: ['holidays', 'leaveRequests', 'attendances', 'currentMonth'],
+        });
+    };
+
+    const formatTime = (timeStr: string | null) => {
+        if (!timeStr) return '';
+        try {
+            const date = new Date(timeStr);
+            return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            });
+        } catch (e) {
+            return '';
+        }
+    };
 
     const renderCalendarDays = () => {
         const grid = [];
@@ -73,6 +111,12 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                 return current >= start && current <= end;
             });
 
+            // Check if attendance exists
+            const attendance = (attendances || []).find((a: any) => {
+                const attDate = typeof a.date === 'string' ? a.date.substring(0, 10) : '';
+                return attDate === dateStr;
+            });
+
             grid.push(
                 <div key={day} className="h-24 border border-gray-100 p-2 flex flex-col gap-1 hover:bg-gray-50 transition-colors">
                     <span className="text-sm font-semibold text-gray-700">{day}</span>
@@ -89,6 +133,20 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                                 'bg-amber-100 text-amber-700'
                             }`} title={leave.reason}>
                                 {leave.type} - {leave.status}
+                            </div>
+                        )}
+                        {attendance && (
+                            <div className="text-[10px] font-bold bg-[#E8F5E9] text-[#2E7D32] px-1.5 py-0.5 rounded flex flex-col gap-0.5 border border-[#C8E6C9]" title={`Punched In: ${formatTime(attendance.punch_in)}${attendance.punch_out ? `, Punched Out: ${formatTime(attendance.punch_out)}` : ''}`}>
+                                <div className="flex items-center gap-0.5 truncate">
+                                    <Clock className="h-2.5 w-2.5 shrink-0" />
+                                    <span>In: {formatTime(attendance.punch_in)}{attendance.minutes_late > 0 ? ` (${attendance.minutes_late}m late)` : ''}</span>
+                                </div>
+                                {attendance.punch_out && (
+                                    <div className="flex items-center gap-0.5 border-t border-[#C8E6C9]/40 pt-0.5 truncate">
+                                        <Clock className="h-2.5 w-2.5 shrink-0" />
+                                        <span>Out: {formatTime(attendance.punch_out)}</span>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -221,7 +279,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                             </h2>
                             <div className="flex gap-2">
                                 <Button variant="outline" size="sm" onClick={prevMonth}>Prev</Button>
-                                <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
+                                <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
                                 <Button variant="outline" size="sm" onClick={nextMonth}>Next</Button>
                             </div>
                         </div>
@@ -236,10 +294,11 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                         </div>
                         
                         {/* Legend */}
-                        <div className="flex items-center gap-4 mt-6 text-xs font-semibold text-gray-600">
+                        <div className="flex flex-wrap items-center gap-4 mt-6 text-xs font-semibold text-gray-600">
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-purple-500"></div> Public Holiday</div>
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Pending Leave</div>
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-green-500"></div> Approved Leave</div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#2E7D32]"></div> Present (Attendance Log)</div>
                         </div>
                     </div>
 
@@ -286,11 +345,11 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {leaveRequests.length === 0 ? (
+                                {leaveHistory.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-medium">No leave requests found.</td>
                                     </tr>
-                                ) : leaveRequests.map((req: any) => {
+                                ) : leaveHistory.map((req: any) => {
                                     const start = new Date(req.start_date);
                                     const end = new Date(req.end_date);
                                     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
