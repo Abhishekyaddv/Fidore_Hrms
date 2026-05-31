@@ -22,16 +22,14 @@ class LeaveManagementController extends Controller
     {
         $this->checkAdmin();
 
-        $holidays = Holiday::orderBy('date', 'asc')->get();
+        $currentYear = date('Y');
+        $holidays = Holiday::getHolidaysInRange("$currentYear-01-01", "$currentYear-12-31");
         $policies = LeavePolicy::all();
         $pendingRequests = LeaveRequest::with('user')->orderBy('created_at', 'desc')->get();
-        $officeTiming = \App\Models\OfficeTiming::first();
-
         return Inertia::render('Admin/LeaveManagement', [
             'holidays' => $holidays,
             'policies' => $policies,
             'leaveRequests' => $pendingRequests,
-            'officeTiming' => $officeTiming,
         ]);
     }
 
@@ -101,27 +99,5 @@ class LeaveManagementController extends Controller
         return redirect()->back()->with('success', 'Leave request deleted successfully.');
     }
 
-    public function storeOfficeTiming(Request $request)
-    {
-        $this->checkAdmin();
 
-        $validated = $request->validate([
-            'start_time' => 'required|string',
-            'end_time' => 'required|string',
-        ]);
-
-        $start = strlen($validated['start_time']) === 5 ? $validated['start_time'] . ':00' : $validated['start_time'];
-        $end = strlen($validated['end_time']) === 5 ? $validated['end_time'] . ':00' : $validated['end_time'];
-
-        \App\Models\OfficeTiming::updateOrCreate(
-            ['id' => 1],
-            [
-                'name' => 'Standard Shift',
-                'start_time' => $start,
-                'end_time' => $end,
-            ]
-        );
-
-        return redirect()->back()->with('success', 'Office Shift Timings updated successfully.');
-    }
 }

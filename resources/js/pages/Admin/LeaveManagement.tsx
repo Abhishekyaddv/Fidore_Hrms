@@ -8,42 +8,16 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Mail, Pencil, Plus, Settings2, Trash2, X, Eye, Paperclip } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export default function LeaveManagement({ holidays, policies, leaveRequests, officeTiming }: any) {
+export default function LeaveManagement({ holidays, policies, leaveRequests }: any) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [filterType, setFilterType] = useState('All');
     const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false);
-    const [isTimingModalOpen, setIsTimingModalOpen] = useState(false);
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingRequest, setEditingRequest] = useState<any>(null);
     const [editStatus, setEditStatus] = useState('');
 
-    // Office Timing Form
-    const {
-        data: timingData,
-        setData: setTimingData,
-        post: postTiming,
-        processing: timingProcessing,
-    } = useForm({
-        start_time: officeTiming ? officeTiming.start_time.substring(0, 5) : '09:00',
-        end_time: officeTiming ? officeTiming.end_time.substring(0, 5) : '18:00',
-    });
-
-    useEffect(() => {
-        if (officeTiming) {
-            setTimingData({
-                start_time: officeTiming.start_time.substring(0, 5),
-                end_time: officeTiming.end_time.substring(0, 5),
-            });
-        }
-    }, [officeTiming]);
-
-    const submitTiming = (e: React.FormEvent) => {
-        e.preventDefault();
-        postTiming(route('admin.leaves.office-timing.store'), {
-            onSuccess: () => setIsTimingModalOpen(false),
-        });
-    };
 
     // Holiday Form
     const {
@@ -257,48 +231,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests, off
                         <p className="mt-0.5 text-sm text-gray-500">Review pending requests and track company-wide holidays.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Dialog open={isTimingModalOpen} onOpenChange={setIsTimingModalOpen}>
-                            <DialogTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className="h-10 border-gray-200 px-4 font-semibold text-[#051C3F] shadow-sm hover:bg-gray-50"
-                                >
-                                    <Settings2 className="mr-2 h-4 w-4 text-gray-500" /> Configure Shift
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[400px]">
-                                <DialogHeader>
-                                    <DialogTitle>Configure Office Shift Timings</DialogTitle>
-                                </DialogHeader>
-                                <form onSubmit={submitTiming} className="mt-4 space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="start_time">Shift Starts (Punch-in)</Label>
-                                            <Input
-                                                id="start_time"
-                                                type="time"
-                                                value={timingData.start_time}
-                                                onChange={(e) => setTimingData('start_time', e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="end_time">Shift Ends (Punch-out)</Label>
-                                            <Input
-                                                id="end_time"
-                                                type="time"
-                                                value={timingData.end_time}
-                                                onChange={(e) => setTimingData('end_time', e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button type="submit" disabled={timingProcessing} className="w-full bg-[#4CB5F9] hover:bg-[#3AA5E9]">
-                                        Save Shift Timings
-                                    </Button>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
+
 
                         <Dialog open={isPolicyModalOpen} onOpenChange={setIsPolicyModalOpen}>
                             <DialogTrigger asChild>

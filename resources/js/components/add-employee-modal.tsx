@@ -69,6 +69,10 @@ export function AddEmployeeModal({
         employment_type: employee?.employment_type || 'Full-time',
         email: employee?.email || '',
         password: '',
+        custom_leave_year: employee?.custom_leave_year || new Date().getFullYear(),
+        custom_cl: employee?.custom_cl ?? '',
+        custom_sl: employee?.custom_sl ?? '',
+        custom_el: employee?.custom_el ?? '',
     });
 
     // Update Employee ID when nextEmployeeId changes (on successful creations)
@@ -87,6 +91,10 @@ export function AddEmployeeModal({
                 employment_type: employee.employment_type || 'Full-time',
                 email: employee.email || '',
                 password: '',
+                custom_leave_year: employee.custom_leave_year || new Date().getFullYear(),
+                custom_cl: employee.custom_cl ?? '',
+                custom_sl: employee.custom_sl ?? '',
+                custom_el: employee.custom_el ?? '',
             });
         }
     }, [nextEmployeeId, isOpen, isEditMode, employee]);
@@ -393,6 +401,93 @@ export function AddEmployeeModal({
                             <p className="text-xs text-info-text leading-normal">
                                 Note: Saving this form will instantly build the new profile. The user can log in immediately.
                             </p>
+                        </div>
+                    </div>
+
+                    {/* Section 4: Custom Leave Allowances (Optional) */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2.5 border-b border-border pb-2">
+                            <Briefcase className="h-5 w-5 text-text-muted shrink-0" />
+                            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                                Custom Leave Allowances (Optional)
+                            </h3>
+                        </div>
+                        <p className="text-xs text-text-secondary">
+                            Use this to override standard leave policies for a specific year (e.g., if an employee joins mid-year). The settings will revert to the global policy after this year.
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {/* Year */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="custom_leave_year" className="text-xs font-semibold text-text-secondary">
+                                    Target Year
+                                </Label>
+                                <Input
+                                    id="custom_leave_year"
+                                    type="number"
+                                    value={data.custom_leave_year}
+                                    onChange={(e) => setData('custom_leave_year', e.target.value)}
+                                    placeholder="YYYY"
+                                    className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                />
+                                {errors.custom_leave_year && (
+                                    <p className="text-xs font-medium text-danger-text">{errors.custom_leave_year}</p>
+                                )}
+                            </div>
+
+                            {/* Casual Leaves */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="custom_cl" className="text-xs font-semibold text-text-secondary">
+                                    Casual Leaves (CL)
+                                </Label>
+                                <Input
+                                    id="custom_cl"
+                                    type="number"
+                                    value={data.custom_cl}
+                                    onChange={(e) => setData('custom_cl', e.target.value)}
+                                    placeholder="Leave empty for default"
+                                    className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                />
+                                {errors.custom_cl && (
+                                    <p className="text-xs font-medium text-danger-text">{errors.custom_cl}</p>
+                                )}
+                            </div>
+
+                            {/* Sick Leaves */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="custom_sl" className="text-xs font-semibold text-text-secondary">
+                                    Sick Leaves (SL)
+                                </Label>
+                                <Input
+                                    id="custom_sl"
+                                    type="number"
+                                    value={data.custom_sl}
+                                    onChange={(e) => setData('custom_sl', e.target.value)}
+                                    placeholder="Leave empty for default"
+                                    className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                />
+                                {errors.custom_sl && (
+                                    <p className="text-xs font-medium text-danger-text">{errors.custom_sl}</p>
+                                )}
+                            </div>
+
+                            {/* Earned Leaves */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="custom_el" className="text-xs font-semibold text-text-secondary">
+                                    Earned Leaves (EL)
+                                </Label>
+                                <Input
+                                    id="custom_el"
+                                    type="number"
+                                    value={data.custom_el}
+                                    onChange={(e) => setData('custom_el', e.target.value)}
+                                    placeholder="Leave empty for default"
+                                    className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                />
+                                {errors.custom_el && (
+                                    <p className="text-xs font-medium text-danger-text">{errors.custom_el}</p>
+                                )}
+                            </div>
                         </div>
                     </div>
 

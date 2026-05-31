@@ -129,9 +129,21 @@ export default function Dashboard({
 
     const handlePunch = () => {
         if (!todayAttendance || !todayAttendance.punch_in) {
-            router.post(route('attendance.punch-in'), {}, {
-                preserveScroll: true,
-            });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        router.post(route('attendance.punch-in'), { latitude, longitude }, {
+                            preserveScroll: true,
+                        });
+                    },
+                    (error) => {
+                        alert('Location access is required to punch in. Please allow location access and try again.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
         } else if (!todayAttendance.punch_out) {
             router.post(route('attendance.punch-out'), {}, {
                 preserveScroll: true,

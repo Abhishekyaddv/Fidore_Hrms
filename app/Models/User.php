@@ -33,6 +33,10 @@ class User extends Authenticatable
         'bio',
         'avatar',
         'emergency_contact',
+        'custom_leave_year',
+        'custom_cl',
+        'custom_sl',
+        'custom_el',
     ];
 
     /**

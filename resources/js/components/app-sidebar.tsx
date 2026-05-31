@@ -45,7 +45,7 @@ export function AppSidebar() {
                     className="flex items-center px-1"
                     prefetch
                 >
-                    <span className="text-lg font-bold tracking-tight text-white dark:text-white">
+                    <span className="text-lg font-bold tracking-tight text-gray-700">
                         HRMS Portal
                     </span>
                 </Link>

@@ -88,7 +88,7 @@ Route::middleware(['auth'])->group(function () {
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->get();
 
-        $holidays = \App\Models\Holiday::whereBetween('date', [$startOfMonth, $endOfMonth])->get();
+        $holidays = \App\Models\Holiday::getHolidaysInRange($startOfMonth, $endOfMonth);
 
         $leaveRequests = \App\Models\LeaveRequest::where('user_id', $user->id)
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
@@ -119,7 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('leaves/holidays', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storeHoliday'])->name('leaves.holidays.store');
         Route::delete('leaves/holidays/{holiday}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'destroyHoliday'])->name('leaves.holidays.destroy');
         Route::post('leaves/policies', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storePolicy'])->name('leaves.policies.store');
-        Route::post('leaves/office-timing', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storeOfficeTiming'])->name('leaves.office-timing.store');
+
         Route::patch('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'updateRequestStatus'])->name('leaves.requests.update');
         Route::delete('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'destroyRequest'])->name('leaves.requests.destroy');
     });

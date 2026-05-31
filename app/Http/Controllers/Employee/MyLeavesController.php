@@ -13,25 +13,31 @@ use Carbon\Carbon;
 
 class MyLeavesController extends Controller
 {
-    public function index()
+    private function getLeaveBalances($user)
     {
-        $user = request()->user();
-        $user->load('leaveRequests');
-
-        $policy = LeavePolicy::where('employment_type', $user->employment_type ?? 'Full-time')->first();
-        
-        // Calculate used leaves for current year
         $currentYear = date('Y');
+        
+        if ($user->custom_leave_year == $currentYear) {
+            $cl_total = $user->custom_cl ?? 0;
+            $sl_total = $user->custom_sl ?? 0;
+            $el_total = $user->custom_el ?? 0;
+        } else {
+            $policy = LeavePolicy::where('employment_type', $user->employment_type ?? 'Full-time')->first();
+            $cl_total = $policy ? $policy->cl : 0;
+            $sl_total = $policy ? $policy->sl : 0;
+            $el_total = $policy ? $policy->el : 0;
+        }
+        
         $usedCL = 0;
         $usedSL = 0;
         $usedEL = 0;
 
         foreach ($user->leaveRequests as $req) {
-            if ($req->status === 'approved' && substr($req->start_date, 0, 4) == $currentYear) {
-                // Calculate days
+            // Count approved and pending requests against the limit
+            if ($req->status !== 'rejected' && substr($req->start_date, 0, 4) == $currentYear) {
                 $start = Carbon::parse($req->start_date);
                 $end = Carbon::parse($req->end_date);
-                $days = $start->diffInDays($end) + 1; // inclusive
+                $days = $start->diffInDays($end) + 1; 
 
                 if ($req->type === 'CL') $usedCL += $days;
                 if ($req->type === 'SL') $usedSL += $days;
@@ -39,17 +45,23 @@ class MyLeavesController extends Controller
             }
         }
 
-        $balances = [
-            'CL' => ['total' => $policy ? $policy->cl : 0, 'used' => $usedCL],
-            'SL' => ['total' => $policy ? $policy->sl : 0, 'used' => $usedSL],
-            'EL' => ['total' => $policy ? $policy->el : 0, 'used' => $usedEL],
+        return [
+            'CL' => ['total' => $cl_total, 'used' => $usedCL],
+            'SL' => ['total' => $sl_total, 'used' => $usedSL],
+            'EL' => ['total' => $el_total, 'used' => $usedEL],
         ];
+    }
 
-        // Upcoming holidays
-        $upcomingHolidays = Holiday::where('date', '>=', date('Y-m-d'))
-            ->orderBy('date', 'asc')
-            ->take(3)
-            ->get();
+    public function index()
+    {
+        $user = request()->user();
+        $user->load('leaveRequests');
+
+        $balances = $this->getLeaveBalances($user);
+
+        // Upcoming holidays (look ahead 6 months)
+        $futureDate = date('Y-m-d', strtotime('+6 months'));
+        $upcomingHolidays = Holiday::getHolidaysInRange(date('Y-m-d'), $futureDate)->take(3);
 
         // Support monthly pagination
         $currentMonth = request('month', date('Y-m'));
@@ -64,7 +76,7 @@ class MyLeavesController extends Controller
         $endOfMonth = $carbonMonth->copy()->endOfMonth()->toDateString();
 
         // Filter holidays for the selected month
-        $holidays = Holiday::whereBetween('date', [$startOfMonth, $endOfMonth])->get();
+        $holidays = Holiday::getHolidaysInRange($startOfMonth, $endOfMonth);
 
         // Filter leave requests for the selected month (for calendar display)
         $leaveRequests = LeaveRequest::where('user_id', $user->id)
@@ -106,17 +118,33 @@ class MyLeavesController extends Controller
             'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        // Check for overlapping holidays
-        $overlappingHoliday = Holiday::where(function ($query) use ($validated) {
-            $query->whereBetween('date', [$validated['start_date'], $validated['end_date']]);
-        })->first();
+        // Check for overlapping holidays or Sundays
+        $overlappingHoliday = Holiday::getHolidaysInRange($validated['start_date'], $validated['end_date'])->first();
 
         if ($overlappingHoliday) {
-            return back()->withErrors(['start_date' => 'Your leave request overlaps with a public holiday: ' . $overlappingHoliday->name]);
+            return back()->withErrors(['start_date' => 'Your leave request overlaps with a holiday: ' . $overlappingHoliday->name]);
         }
 
         $validated['user_id'] = $request->user()->id;
         $validated['status'] = 'pending';
+
+        if ($validated['type'] !== 'LWP') {
+            $balances = $this->getLeaveBalances($request->user());
+            $leaveType = $validated['type'];
+            
+            if (isset($balances[$leaveType])) {
+                $start = Carbon::parse($validated['start_date']);
+                $end = Carbon::parse($validated['end_date']);
+                $requestedDays = $start->diffInDays($end) + 1;
+                
+                $totalAvailable = $balances[$leaveType]['total'];
+                $alreadyUsed = $balances[$leaveType]['used'];
+                
+                if (($alreadyUsed + $requestedDays) > $totalAvailable) {
+                    return back()->withErrors(['type' => "You do not have enough $leaveType balance. (Requested: $requestedDays, Available: " . max(0, $totalAvailable - $alreadyUsed) . ")"]);
+                }
+            }
+        }
 
         if ($request->hasFile('document')) {
             $path = $request->file('document')->store('leave_docs', 'public');

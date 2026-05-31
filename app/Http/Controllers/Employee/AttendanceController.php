@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\UserLocation;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -21,21 +22,25 @@ class AttendanceController extends Controller
             return back()->withErrors(['punch_in' => 'Already punched in for today.']);
         }
 
-        $timing = \App\Models\OfficeTiming::first();
-        $minutesLate = 0;
-        
-        if ($timing && $timing->start_time) {
-            $currentTime = now();
-            $expectedTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $today . ' ' . $timing->start_time);
-            if ($currentTime->gt($expectedTime)) {
-                $minutesLate = $currentTime->diffInMinutes($expectedTime);
-            }
-        }
+        $request->validate([
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
 
         $attendance->update([
             'punch_in' => now(),
-            'minutes_late' => $minutesLate,
+            'minutes_late' => 0,
         ]);
+
+        if ($request->filled('latitude') && $request->filled('longitude')) {
+            UserLocation::create([
+                'user_id' => $user->id,
+                'attendance_id' => $attendance->id,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'type' => 'punch_in',
+            ]);
+        }
 
         return back()->with('success', 'Punched in successfully.');
     }

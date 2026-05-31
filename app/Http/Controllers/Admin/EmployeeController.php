@@ -82,6 +82,10 @@ class EmployeeController extends Controller
             'employment_type' => 'required|string|in:Full-time,Probation,Intern',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
+            'custom_leave_year' => 'nullable|integer',
+            'custom_cl' => 'nullable|integer',
+            'custom_sl' => 'nullable|integer',
+            'custom_el' => 'nullable|integer',
         ], [
             'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
         ]);
@@ -106,6 +110,10 @@ class EmployeeController extends Controller
             'employee_id' => $request->employee_id,
             'joining_date' => $request->joining_date,
             'employment_type' => $request->employment_type,
+            'custom_leave_year' => $request->custom_leave_year,
+            'custom_cl' => $request->custom_cl,
+            'custom_sl' => $request->custom_sl,
+            'custom_el' => $request->custom_el,
         ]);
 
         return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully.');
@@ -140,6 +148,10 @@ class EmployeeController extends Controller
                 Rule::unique('users')->ignore($employee->id),
             ],
             'password' => 'nullable|string|min:8',
+            'custom_leave_year' => 'nullable|integer',
+            'custom_cl' => 'nullable|integer',
+            'custom_sl' => 'nullable|integer',
+            'custom_el' => 'nullable|integer',
         ], [
             'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
         ]);
@@ -163,6 +175,10 @@ class EmployeeController extends Controller
             'employee_id' => $request->employee_id,
             'joining_date' => $request->joining_date,
             'employment_type' => $request->employment_type,
+            'custom_leave_year' => $request->custom_leave_year,
+            'custom_cl' => $request->custom_cl,
+            'custom_sl' => $request->custom_sl,
+            'custom_el' => $request->custom_el,
         ];
 
         if ($request->filled('password')) {
