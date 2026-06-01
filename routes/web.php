@@ -2,9 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Mail;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()->route('login');
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
@@ -136,6 +137,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::post('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update_info');
     Route::post('profile/avatar', [\App\Http\Controllers\ProfileController::class, 'updateAvatar'])->name('profile.update_avatar');
+});
+
+
+
+Route::get('/test-mail', function () {
+
+    Mail::raw('This is a test email from Laravel.', function ($message) {
+        $message->to('ay6293347@gmail.com')
+                ->subject('Laravel Mail Test');
+    });
+
+    return 'Mail Sent';
 });
 
 require __DIR__.'/settings.php';

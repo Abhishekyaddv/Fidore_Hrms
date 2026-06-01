@@ -118,7 +118,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
     }).length;
 
     const futureHolidays = holidays
-        .filter((h: any) => new Date(h.date) >= today)
+        .filter((h: any) => new Date(h.date) >= today && h.name !== 'Weekly Off (Sunday)')
         .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const nextHoliday = futureHolidays[0];
     const daysToNextHoliday = nextHoliday ? Math.ceil((new Date(nextHoliday.date).getTime() - today.getTime()) / (1000 * 3600 * 24)) : '-';

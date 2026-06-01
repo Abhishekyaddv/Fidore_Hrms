@@ -59,9 +59,11 @@ class MyLeavesController extends Controller
 
         $balances = $this->getLeaveBalances($user);
 
-        // Upcoming holidays (look ahead 6 months)
-        $futureDate = date('Y-m-d', strtotime('+6 months'));
-        $upcomingHolidays = Holiday::getHolidaysInRange(date('Y-m-d'), $futureDate)->take(3);
+        // Upcoming holidays (look ahead 6 months - only HR set holidays)
+        $upcomingHolidays = Holiday::where('date', '>=', date('Y-m-d'))
+            ->orderBy('date', 'asc')
+            ->take(3)
+            ->get();
 
         // Support monthly pagination
         $currentMonth = request('month', date('Y-m'));
@@ -151,7 +153,13 @@ class MyLeavesController extends Controller
             $validated['document_path'] = $path;
         }
 
-        LeaveRequest::create($validated);
+        $leaveRequest = LeaveRequest::create($validated);
+
+        // Notify HR users
+        $hrUsers = \App\Models\User::where('role', 'hr')->get();
+        foreach ($hrUsers as $hrUser) {
+            \Illuminate\Support\Facades\Mail::to($hrUser->email)->send(new \App\Mail\LeaveRequested($leaveRequest));
+        }
 
         return redirect()->back()->with('success', 'Leave request submitted successfully.');
     }

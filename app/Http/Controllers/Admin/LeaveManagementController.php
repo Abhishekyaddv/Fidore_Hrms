@@ -89,6 +89,12 @@ class LeaveManagementController extends Controller
 
         $leaveRequest->update($validated);
 
+        // Notify the employee
+        $leaveRequest->load('user');
+        if ($leaveRequest->user) {
+            \Illuminate\Support\Facades\Mail::to($leaveRequest->user->email)->send(new \App\Mail\LeaveStatusUpdated($leaveRequest));
+        }
+
         return redirect()->back()->with('success', 'Leave request updated successfully.');
     }
 
