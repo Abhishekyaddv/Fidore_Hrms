@@ -130,6 +130,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('my-leaves', [\App\Http\Controllers\Employee\MyLeavesController::class, 'store'])->name('my-leaves.store')->middleware(\App\Http\Middleware\CheckBearerToken::class);
     Route::delete('my-leaves/{leaveRequest}', [\App\Http\Controllers\Employee\MyLeavesController::class, 'destroy'])->name('my-leaves.destroy')->middleware(\App\Http\Middleware\CheckBearerToken::class);
 
+    // Company Policies
+    Route::resource('company-policies', \App\Http\Controllers\CompanyPolicyController::class)->only(['index', 'store', 'update', 'destroy'])->middleware(\App\Http\Middleware\CheckBearerToken::class);
+
     // Attendance
     Route::post('attendance/punch-in', [\App\Http\Controllers\Employee\AttendanceController::class, 'punchIn'])->name('attendance.punch-in')->middleware(\App\Http\Middleware\CheckBearerToken::class);
     Route::post('attendance/punch-out', [\App\Http\Controllers\Employee\AttendanceController::class, 'punchOut'])->name('attendance.punch-out')->middleware(\App\Http\Middleware\CheckBearerToken::class);

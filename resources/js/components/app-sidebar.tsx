@@ -11,12 +11,13 @@ import {
 } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Calendar, LayoutGrid, Settings, Users, Briefcase, User } from 'lucide-react';
+import { Calendar, LayoutGrid, Settings, Users, Briefcase, User, FileText } from 'lucide-react';
 import AppLogoIcon from './app-logo-icon';
 
 const adminNavItems: NavItem[] = [
     { title: 'Dashboard',          url: '/dashboard',    icon: LayoutGrid },
     { title: 'Leave Management',   url: '/admin/leaves', icon: Calendar   },
+    { title: 'Company Policies',   url: '/company-policies', icon: FileText },
     { title: 'Designations',       url: '/admin/designations', icon: Briefcase  },
     { title: 'Employee Directory', url: '/admin/employees',    icon: Users      },
     { title: 'My Profile',         url: '/profile',            icon: User       },
@@ -25,6 +26,7 @@ const adminNavItems: NavItem[] = [
 const employeeNavItems: NavItem[] = [
     { title: 'Dashboard',  url: '/dashboard', icon: LayoutGrid },
     { title: 'My Leaves',  url: '/my-leaves', icon: Calendar   },
+    { title: 'Company Policies', url: '/company-policies', icon: FileText },
     { title: 'My Profile', url: '/profile',   icon: User       },
 ];
 
