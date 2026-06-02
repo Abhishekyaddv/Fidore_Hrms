@@ -211,15 +211,14 @@ export default function EmployeeDirectory({
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </button>
-                                                        {emp.role !== 'admin' && emp.role !== 'superadmin' && (
-                                                            <button 
-                                                                onClick={() => handleDelete(emp.id)}
-                                                                className="text-red-500 hover:text-red-700 transition-colors"
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </button>
-                                                        )}
+                                                        <button 
+                                                            onClick={emp.role === 'admin' || emp.role === 'superadmin' ? undefined : () => handleDelete(emp.id)}
+                                                            className={`transition-colors ${emp.role === 'admin' || emp.role === 'superadmin' ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:text-red-700'}`}
+                                                            title={emp.role === 'admin' || emp.role === 'superadmin' ? "Cannot delete admin" : "Delete"}
+                                                            disabled={emp.role === 'admin' || emp.role === 'superadmin'}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>

@@ -202,6 +202,11 @@ class EmployeeController extends Controller
             return redirect()->back()->with('error', 'You cannot delete your own account.');
         }
 
+        // Prevent deleting admins
+        if (in_array($employee->role, ['admin', 'superadmin'])) {
+            abort(403, 'You cannot delete an administrator account.');
+        }
+
         $employee->delete();
 
         return redirect()->route('admin.employees.index')->with('success', 'Employee deleted successfully.');

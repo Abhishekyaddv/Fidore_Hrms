@@ -194,19 +194,42 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                 return current >= start && current <= end;
             });
 
+            const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+            const isSunday = new Date(year, month, day).getDay() === 0;
+            const isPublicHoliday = holiday && holiday.name !== 'Weekly Off (Sunday)';
+
+            let boxClasses = "group relative flex h-24 flex-col rounded-xl border p-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors hover:border-[#4CB5F9] ";
+            let textClasses = "font-semibold ";
+
+            if (isToday) {
+                boxClasses += "border-blue-300 bg-blue-50/60";
+                textClasses += "text-lg text-blue-600";
+            } else if (isSunday) {
+                boxClasses += "border-gray-100 bg-gray-50/50";
+                textClasses += "text-sm text-gray-400";
+            } else {
+                boxClasses += "border-gray-100 bg-white";
+                textClasses += "text-sm text-gray-500";
+            }
+
             grid.push(
                 <div
                     key={day}
-                    className="group relative flex h-24 flex-col rounded-xl border border-gray-100 bg-white p-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors hover:border-[#4CB5F9]"
+                    className={boxClasses}
                 >
-                    <span className="text-sm font-semibold text-gray-500">{day}</span>
+                    <span className={textClasses}>{day}</span>
                     <div className="no-scrollbar flex-1 overflow-y-auto">
-                        {holiday && (
+                        {isPublicHoliday && (
                             <span
                                 className="mt-1 inline-block w-full truncate rounded-full bg-rose-100 px-1.5 py-0.5 text-center text-[9px] font-bold text-rose-600"
                                 title={holiday.name}
                             >
                                 Public Holiday
+                            </span>
+                        )}
+                        {isSunday && !isPublicHoliday && (
+                            <span className="mt-1 inline-block w-full truncate rounded bg-transparent px-1 py-0.5 text-center text-[10px] font-medium text-gray-400/80">
+                                Holiday
                             </span>
                         )}
                         {leaves.map((l: any, i: number) => (

@@ -208,6 +208,7 @@ export default function Dashboard({
 
             // Check if holiday
             const holiday = holidays.find((h) => h.date === dateStr);
+            const isPublicHoliday = holiday && holiday.name !== 'Weekly Off (Sunday)';
             
             // Check if leave
             const leave = leaveRequests.find((l) => {
@@ -226,9 +227,12 @@ export default function Dashboard({
             let indicatorColor = '';
             let tooltip = '';
 
-            if (holiday) {
-                indicatorColor = 'bg-purple-500';
+            if (isPublicHoliday) {
+                indicatorColor = 'bg-rose-500';
                 tooltip = `Holiday: ${holiday.name}`;
+            } else if (holiday && !isPublicHoliday) {
+                indicatorColor = 'bg-gray-300';
+                tooltip = `Weekly Off`;
             } else if (leave) {
                 if (leave.status === 'approved') {
                     indicatorColor = 'bg-emerald-500';
@@ -468,8 +472,12 @@ export default function Dashboard({
                                 Pending Leave
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                                Holiday
+                                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                                Public Holiday
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                                Weekly Off
                             </div>
                         </div>
                     </div>

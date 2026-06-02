@@ -96,12 +96,17 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
             grid.push(<div key={`empty-${i}`} className="h-24 border border-gray-100 bg-gray-50/50"></div>);
         }
 
+        const today = new Date();
         // Days
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             
             // Check if holiday
             const holiday = holidays.find((h: any) => h.date === dateStr);
+            
+            const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+            const isSunday = new Date(year, month, day).getDay() === 0;
+            const isPublicHoliday = holiday && holiday.name !== 'Weekly Off (Sunday)';
             
             // Check if leave
             const leave = leaveRequests.find((l: any) => {
@@ -117,13 +122,32 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                 return attDate === dateStr;
             });
 
+            let boxClasses = "h-24 border p-2 flex flex-col gap-1 transition-colors ";
+            let textClasses = "font-semibold ";
+
+            if (isToday) {
+                boxClasses += "border-blue-300 bg-blue-50/60 hover:bg-blue-50";
+                textClasses += "text-lg text-blue-600";
+            } else if (isSunday) {
+                boxClasses += "border-gray-100 bg-gray-50/50 hover:bg-gray-50";
+                textClasses += "text-sm text-gray-400";
+            } else {
+                boxClasses += "border-gray-100 bg-white hover:bg-gray-50";
+                textClasses += "text-sm text-gray-700";
+            }
+
             grid.push(
-                <div key={day} className="h-24 border border-gray-100 p-2 flex flex-col gap-1 hover:bg-gray-50 transition-colors">
-                    <span className="text-sm font-semibold text-gray-700">{day}</span>
+                <div key={day} className={boxClasses}>
+                    <span className={textClasses}>{day}</span>
                     <div className="flex-1 overflow-y-auto space-y-1 no-scrollbar">
-                        {holiday && (
-                            <div className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded truncate" title={holiday.name}>
+                        {isPublicHoliday && (
+                            <div className="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded truncate" title={holiday.name}>
                                 🎉 {holiday.name}
+                            </div>
+                        )}
+                        {isSunday && !isPublicHoliday && (
+                            <div className="text-[10px] font-medium text-gray-400/80 px-1 py-0.5 text-center bg-transparent rounded truncate" title="Weekly Off">
+                                Holiday
                             </div>
                         )}
                         {leave && (
@@ -295,7 +319,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                         
                         {/* Legend */}
                         <div className="flex flex-wrap items-center gap-4 mt-6 text-xs font-semibold text-gray-600">
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-purple-500"></div> Public Holiday</div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500"></div> Public Holiday</div>
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Pending Leave</div>
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-green-500"></div> Approved Leave</div>
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#2E7D32]"></div> Present (Attendance Log)</div>

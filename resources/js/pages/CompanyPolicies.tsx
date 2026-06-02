@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { AddPolicyModal } from '@/components/add-policy-modal';
+import { EditPolicyModal } from '@/components/edit-policy-modal';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { router } from '@inertiajs/react';
 
 export default function CompanyPolicies({ policies = [] }: any) {
     const { auth } = usePage<any>().props;
@@ -26,7 +29,20 @@ export default function CompanyPolicies({ policies = [] }: any) {
     const isAdmin = user.role === 'hr' || user.role === 'superadmin';
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingPolicy, setEditingPolicy] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const openEditModal = (policy: any) => {
+        setEditingPolicy(policy);
+        setIsEditModalOpen(true);
+    };
+
+    const handleDelete = (policyId: number) => {
+        if (confirm('Are you sure you want to delete this policy?')) {
+            router.delete(route('company-policies.destroy', policyId));
+        }
+    };
 
     const filteredPolicies = policies.filter((p: any) => 
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -173,9 +189,21 @@ export default function CompanyPolicies({ policies = [] }: any) {
                                                             </span>
                                                         )}
                                                         {isAdmin && (
-                                                            <button className="text-gray-400 hover:text-gray-600">
-                                                                <MoreVertical className="h-5 w-5" />
-                                                            </button>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className="text-gray-400 hover:text-gray-600 outline-none">
+                                                                        <MoreVertical className="h-5 w-5" />
+                                                                    </button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onClick={() => openEditModal(policy)}>
+                                                                        Edit Policy
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700" onClick={() => handleDelete(policy.id)}>
+                                                                        Delete Policy
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         )}
                                                     </div>
                                                 </div>
@@ -219,10 +247,17 @@ export default function CompanyPolicies({ policies = [] }: any) {
             </div>
 
             {isAdmin && (
-                <AddPolicyModal 
-                    isOpen={isAddModalOpen} 
-                    setIsOpen={setIsAddModalOpen} 
-                />
+                <>
+                    <AddPolicyModal 
+                        isOpen={isAddModalOpen} 
+                        setIsOpen={setIsAddModalOpen} 
+                    />
+                    <EditPolicyModal 
+                        isOpen={isEditModalOpen} 
+                        setIsOpen={setIsEditModalOpen} 
+                        policy={editingPolicy}
+                    />
+                </>
             )}
         </SidebarProvider>
     );
