@@ -247,13 +247,8 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
             <Head title="Leave Management" />
 
             <div className="flex min-h-screen flex-col gap-6 bg-slate-50 p-6">
-                {/* Header */}
-                <div className="flex flex-col justify-between gap-4 border-b border-dashed border-gray-200/60 pb-6 md:flex-row md:items-center">
-                    <div>
-                        <h1 className="text-[22px] font-bold tracking-tight text-[#051C3F]">Leave Management & Holidays</h1>
-                        <p className="mt-0.5 text-sm text-gray-500">Review pending requests and track company-wide holidays.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
+                {/* Header Actions */}
+                <div className="flex justify-end gap-4 border-b border-dashed border-gray-200/60 pb-6">
 
 
                         <Dialog open={isPolicyModalOpen} onOpenChange={setIsPolicyModalOpen}>
@@ -414,8 +409,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                             </DialogContent>
                         </Dialog>
                     </div>
-                </div>
-
+                    
                 {/* Top Layout Grid */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Calendar Section */}

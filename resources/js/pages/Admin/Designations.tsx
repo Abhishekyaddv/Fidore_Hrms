@@ -188,16 +188,8 @@ export default function Designations({
             <Head title="Designation Management" />
             <div className="flex flex-1 flex-col gap-6 p-6 bg-surface-1 min-h-screen">
                 
-                {/* Header Title Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-                            Designation Management
-                        </h1>
-                        <p className="text-text-secondary">
-                            Configure and organize job titles across all departments.
-                        </p>
-                    </div>
+                {/* Header Action Section */}
+                <div className="flex justify-end gap-4">
                     <div className="flex items-center gap-3">
                         <Button
                             onClick={handleCreateOpen}

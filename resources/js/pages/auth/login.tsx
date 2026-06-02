@@ -8,7 +8,7 @@ interface LoginProps {
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         email: '',
         password: '',
         remember: false as boolean,
@@ -112,7 +112,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                             id="email"
                                             type="email"
                                             value={data.email}
-                                            onChange={(e) => setData('email', e.target.value)}
+                                            onChange={(e) => {
+                                                setData('email', e.target.value);
+                                                clearErrors();
+                                            }}
                                             placeholder="name@company.com"
                                             className={`w-full pl-11 pr-4 py-3 bg-surface-1 border rounded-xl text-text-primary placeholder:text-text-muted outline-none transition-all duration-200 focus:bg-surface-0 focus:ring-2 ${
                                                 errors.email 
@@ -141,7 +144,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                             id="password"
                                             type={showPassword ? 'text' : 'password'}
                                             value={data.password}
-                                            onChange={(e) => setData('password', e.target.value)}
+                                            onChange={(e) => {
+                                                setData('password', e.target.value);
+                                                clearErrors();
+                                            }}
                                             placeholder="••••••••"
                                             className={`w-full pl-11 pr-12 py-3 bg-surface-1 border rounded-xl text-text-primary placeholder:text-text-muted outline-none transition-all duration-200 focus:bg-surface-0 focus:ring-2 ${
                                                 errors.password 

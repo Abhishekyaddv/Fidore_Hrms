@@ -58,7 +58,7 @@ export function AddEmployeeModal({
 }: AddEmployeeModalProps) {
     const isEditMode = !!employee;
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, post, put, processing, errors, reset, clearErrors, setError } = useForm({
         name: employee?.name || '',
         dob: employee?.dob || '',
         gender: employee?.gender || '',
@@ -110,6 +110,34 @@ export function AddEmployeeModal({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
+        clearErrors();
+        let hasErrors = false;
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+            setError('email', 'Please enter a valid email address.');
+            hasErrors = true;
+        }
+
+        if (data.phone) {
+            const phoneRegex = /^(?:\+91[\-\s]?)?0?(91)?[6-9]\d{9}$/;
+            if (!phoneRegex.test(data.phone)) {
+                setError('phone', 'Please enter a valid Indian mobile number.');
+                hasErrors = true;
+            }
+        }
+
+        // Validate password if provided, or if it's a new employee (required)
+        if (data.password || !isEditMode) {
+            const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+            if (!passwordRegex.test(data.password)) {
+                setError('password', 'Password must be at least 8 characters long, contain an uppercase letter, a number, and a special character.');
+                hasErrors = true;
+            }
+        }
+
+        if (hasErrors) return;
+
         const handleSuccess = () => {
             console.log('Request successful');
             setIsOpen(false);

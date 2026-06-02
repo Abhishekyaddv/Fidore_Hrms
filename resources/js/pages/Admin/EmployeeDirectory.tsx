@@ -103,12 +103,8 @@ export default function EmployeeDirectory({
                 <main className="flex-1 overflow-auto p-8">
                     <div className="mx-auto max-w-7xl">
                         
-                        {/* Page Header & Stats */}
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold text-[#051C3F] tracking-tight">Employee Directory</h1>
-                                <p className="text-gray-500 text-sm mt-1">Manage your workforce, roles, and administrative permissions.</p>
-                            </div>
+                        {/* Page Stats */}
+                        <div className="flex justify-end gap-6 mb-8">
                             <div className="flex gap-4">
                                 <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 min-w-[200px] shadow-sm">
                                     <div className="bg-blue-50 p-3 rounded-lg text-blue-600">

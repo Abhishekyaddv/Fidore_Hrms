@@ -174,12 +174,8 @@ export default function AdminDashboard({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Admin Dashboard" />
             <div className="flex flex-1 flex-col gap-6 p-6 bg-surface-1 min-h-screen">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Good Morning, {auth.user.name}</h1>
-                        <p className="text-text-secondary">Here is what's happening in Small Corp today.</p>
-                    </div>
+                {/* Header Action Section */}
+                <div className="flex justify-end gap-4">
                     <div className="flex items-center gap-3">
                         <Button onClick={() => setIsAddEmployeeOpen(true)} className="bg-brand-600 hover:bg-brand-400 text-white cursor-pointer shadow-xs font-semibold">
                             <Plus className="mr-2 h-4 w-4" /> New Hire

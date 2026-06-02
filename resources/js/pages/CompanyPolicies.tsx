@@ -101,12 +101,8 @@ export default function CompanyPolicies({ policies = [] }: any) {
                 <main className="flex-1 overflow-auto p-8">
                     <div className="mx-auto max-w-6xl">
                         
-                        {/* Page Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold text-[#051C3F] tracking-tight">Company Policies</h1>
-                                <p className="text-gray-500 text-sm mt-1">Manage, update, and publish official company guidelines.</p>
-                            </div>
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-4 mb-8">
                             {isAdmin && (
                                 <Button 
                                     className="bg-[#0D4E78] hover:bg-[#0A3D5E] text-white rounded-md px-4 py-2 flex items-center gap-2 font-medium"

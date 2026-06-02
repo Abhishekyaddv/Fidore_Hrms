@@ -39,7 +39,7 @@ export function AppSidebar() {
         <Sidebar
             collapsible="icon"
             variant="inset"
-            className={isAdmin ? 'admin-sidebar dark' : ''}
+            className={isAdmin ? 'admin-sidebar bg-white' : 'bg-white'}
         >
             <SidebarHeader className="border-b border-black/[0.05] px-5 py-5">
                 <Link
@@ -47,7 +47,7 @@ export function AppSidebar() {
                     className="flex items-center px-1"
                     prefetch
                 >
-                    <span className="text-lg font-bold tracking-tight text-gray-700">
+                    <span className="text-lg font-bold tracking-tight text-[#1A365D]">
                         HRMS Portal
                     </span>
                 </Link>
@@ -59,7 +59,7 @@ export function AppSidebar() {
                     <p className="
                         px-2 pb-1 pt-2
                         text-[11px] font-semibold uppercase tracking-[0.6px]
-                        text-[rgba(60,60,67,0.45)]
+                        text-gray-800
                     ">
                         Admin
                     </p>
