@@ -49,25 +49,19 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
         post: postPolicy,
         processing: policyProcessing,
     } = useForm({
-        employment_type: 'Full-time',
-        cl: 0,
-        sl: 0,
-        el: 0,
+        policies: [
+            { employment_type: 'Probation', cl: 0, sl: 0, el: 0 },
+            { employment_type: 'Full-time', cl: 0, sl: 0, el: 0 },
+        ],
     });
 
-    const handlePolicyTypeChange = (val: string) => {
-        setPolicyData('employment_type', val);
-        const existing = policies.find((p: any) => p.employment_type === val);
-        if (existing) {
-            setPolicyData('cl', existing.cl);
-            setPolicyData('sl', existing.sl);
-            setPolicyData('el', existing.el);
-        } else {
-            setPolicyData('cl', 0);
-            setPolicyData('sl', 0);
-            setPolicyData('el', 0);
+    useEffect(() => {
+        if (isPolicyModalOpen && policies) {
+            const probation = policies.find((p: any) => p.employment_type === 'Probation') || { employment_type: 'Probation', cl: 0, sl: 0, el: 0 };
+            const fullTime = policies.find((p: any) => p.employment_type === 'Full-time') || { employment_type: 'Full-time', cl: 0, sl: 0, el: 0 };
+            setPolicyData('policies', [probation, fullTime]);
         }
-    };
+    }, [isPolicyModalOpen, policies]);
 
     const submitPolicy = (e: React.FormEvent) => {
         e.preventDefault();
@@ -195,16 +189,20 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
             });
 
             const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
-            const isSunday = new Date(year, month, day).getDay() === 0;
+            const dayOfWeek = new Date(year, month, day).getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
             const isPublicHoliday = holiday && holiday.name !== 'Weekly Off (Sunday)';
 
             let boxClasses = "group relative flex h-24 flex-col rounded-xl border p-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors hover:border-[#4CB5F9] ";
             let textClasses = "font-semibold ";
 
-            if (isToday) {
+            if (isPublicHoliday) {
+                boxClasses += "border-rose-300 bg-rose-50/60";
+                textClasses += "text-sm text-rose-600";
+            } else if (isToday) {
                 boxClasses += "border-blue-300 bg-blue-50/60";
                 textClasses += "text-lg text-blue-600";
-            } else if (isSunday) {
+            } else if (isWeekend) {
                 boxClasses += "border-gray-100 bg-gray-50/50";
                 textClasses += "text-sm text-gray-400";
             } else {
@@ -227,9 +225,9 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                 Public Holiday
                             </span>
                         )}
-                        {isSunday && !isPublicHoliday && (
+                        {isWeekend && !isPublicHoliday && (
                             <span className="mt-1 inline-block w-full truncate rounded bg-transparent px-1 py-0.5 text-center text-[10px] font-medium text-gray-400/80">
-                                Holiday
+                                Weekend
                             </span>
                         )}
                         {leaves.map((l: any, i: number) => (
@@ -264,53 +262,66 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                 <DialogHeader>
                                     <DialogTitle>Configure Policy Allowances</DialogTitle>
                                 </DialogHeader>
-                                <form onSubmit={submitPolicy} className="mt-4 space-y-5">
-                                    <div className="space-y-2">
-                                        <Label>Employment Type Target</Label>
-                                        <Select value={policyData.employment_type} onValueChange={handlePolicyTypeChange}>
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Probation">Probation</SelectItem>
-                                                <SelectItem value="Full-time">Full-time / Confirmed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Casual (CL)</Label>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                value={policyData.cl}
-                                                onChange={(e) => setPolicyData('cl', Number(e.target.value))}
-                                                required
-                                            />
+                                <form onSubmit={submitPolicy} className="mt-4 space-y-6">
+                                    {policyData.policies.map((policy, index) => (
+                                        <div key={policy.employment_type} className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4CB5F9]/10 text-[#4CB5F9]">
+                                                    <Settings2 className="h-3 w-3" />
+                                                </div>
+                                                <h4 className="font-bold text-[#051C3F]">{policy.employment_type} Policy</h4>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs text-gray-500">Casual (CL)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={policy.cl}
+                                                        onChange={(e) => {
+                                                            const newPolicies = [...policyData.policies];
+                                                            newPolicies[index].cl = Number(e.target.value);
+                                                            setPolicyData('policies', newPolicies);
+                                                        }}
+                                                        className="h-8 bg-white"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs text-gray-500">Sick (SL)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={policy.sl}
+                                                        onChange={(e) => {
+                                                            const newPolicies = [...policyData.policies];
+                                                            newPolicies[index].sl = Number(e.target.value);
+                                                            setPolicyData('policies', newPolicies);
+                                                        }}
+                                                        className="h-8 bg-white"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs text-gray-500">Earned (EL)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={policy.el}
+                                                        onChange={(e) => {
+                                                            const newPolicies = [...policyData.policies];
+                                                            newPolicies[index].el = Number(e.target.value);
+                                                            setPolicyData('policies', newPolicies);
+                                                        }}
+                                                        className="h-8 bg-white"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Sick (SL)</Label>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                value={policyData.sl}
-                                                onChange={(e) => setPolicyData('sl', Number(e.target.value))}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Earned (EL)</Label>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                value={policyData.el}
-                                                onChange={(e) => setPolicyData('el', Number(e.target.value))}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
+                                    ))}
                                     <Button type="submit" disabled={policyProcessing} className="w-full bg-[#4CB5F9] hover:bg-[#3AA5E9]">
-                                        Save Policy Config
+                                        Save All Policies
                                     </Button>
                                 </form>
                             </DialogContent>

@@ -30,21 +30,29 @@ Route::middleware(['auth'])->group(function () {
                 ->where('date', now()->toDateString())
                 ->first();
 
-            $totalEmployees = \App\Models\User::count();
-            $newEmployeesThisMonth = \App\Models\User::where('created_at', '>=', now()->startOfMonth())->count();
-            $pendingLeaves = \App\Models\LeaveRequest::where('status', 'pending')->count();
+            $totalEmployees = \App\Models\User::where('role', '!=', 'superadmin')->count();
+            $newEmployeesThisMonth = \App\Models\User::where('role', '!=', 'superadmin')->where('created_at', '>=', now()->startOfMonth())->count();
+            $pendingLeaves = \App\Models\LeaveRequest::whereHas('user', function ($q) {
+                $q->where('role', '!=', 'superadmin');
+            })->where('status', 'pending')->count();
 
             // Today's attendance stats
-            $presentCount = \App\Models\Attendance::where('date', now()->toDateString())
+            $presentCount = \App\Models\Attendance::whereHas('user', function ($q) {
+                $q->where('role', '!=', 'superadmin');
+            })->where('date', now()->toDateString())
                 ->whereNotNull('punch_in')
                 ->count();
 
-            $leaveCount = \App\Models\LeaveRequest::where('status', 'approved')
+            $leaveCount = \App\Models\LeaveRequest::whereHas('user', function ($q) {
+                $q->where('role', '!=', 'superadmin');
+            })->where('status', 'approved')
                 ->whereDate('start_date', '<=', now()->toDateString())
                 ->whereDate('end_date', '>=', now()->toDateString())
                 ->count();
 
-            $attendancesToday = \App\Models\Attendance::where('date', now()->toDateString())
+            $attendancesToday = \App\Models\Attendance::whereHas('user', function ($q) {
+                $q->where('role', '!=', 'superadmin');
+            })->where('date', now()->toDateString())
                 ->whereNotNull('punch_in')
                 ->get();
             $lateCount = $attendancesToday->filter(function ($att) {

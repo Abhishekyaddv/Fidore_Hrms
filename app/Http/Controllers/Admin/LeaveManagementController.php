@@ -60,22 +60,25 @@ class LeaveManagementController extends Controller
         $this->checkAdmin();
 
         $validated = $request->validate([
-            'employment_type' => 'required|string',
-            'cl' => 'required|integer|min:0',
-            'sl' => 'required|integer|min:0',
-            'el' => 'required|integer|min:0',
+            'policies' => 'required|array',
+            'policies.*.employment_type' => 'required|string',
+            'policies.*.cl' => 'required|integer|min:0',
+            'policies.*.sl' => 'required|integer|min:0',
+            'policies.*.el' => 'required|integer|min:0',
         ]);
 
-        LeavePolicy::updateOrCreate(
-            ['employment_type' => $validated['employment_type']],
-            [
-                'cl' => $validated['cl'],
-                'sl' => $validated['sl'],
-                'el' => $validated['el'],
-            ]
-        );
+        foreach ($validated['policies'] as $policy) {
+            LeavePolicy::updateOrCreate(
+                ['employment_type' => $policy['employment_type']],
+                [
+                    'cl' => $policy['cl'],
+                    'sl' => $policy['sl'],
+                    'el' => $policy['el'],
+                ]
+            );
+        }
 
-        return redirect()->back()->with('success', 'Leave Policy updated successfully.');
+        return redirect()->back()->with('success', 'Leave Policies updated successfully.');
     }
 
     public function updateRequestStatus(Request $request, LeaveRequest $leaveRequest)
