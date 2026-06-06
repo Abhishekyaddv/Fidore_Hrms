@@ -75,6 +75,7 @@ export default function AdminDashboard({
     const { auth } = usePage<SharedData>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
+    const [preFetchedLocation, setPreFetchedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
     // Update real-time clock
     useEffect(() => {
@@ -105,6 +106,25 @@ export default function AdminDashboard({
         return () => clearInterval(interval);
     }, []);
 
+    // Pre-fetch location on mount
+    useEffect(() => {
+        if (!todayAttendance || !todayAttendance.punch_in) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        setPreFetchedLocation({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                        });
+                    },
+                    (error) => {
+                        console.warn('Pre-fetching location failed:', error);
+                    }
+                );
+            }
+        }
+    }, [todayAttendance]);
+
     const formatTime = (isoString: string | null) => {
         if (!isoString) return '';
         try {
@@ -121,7 +141,11 @@ export default function AdminDashboard({
 
     const handlePunch = () => {
         if (!todayAttendance || !todayAttendance.punch_in) {
-            if (navigator.geolocation) {
+            if (preFetchedLocation) {
+                router.post(route('attendance.punch-in'), preFetchedLocation, {
+                    preserveScroll: true,
+                });
+            } else if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const { latitude, longitude } = position.coords;
