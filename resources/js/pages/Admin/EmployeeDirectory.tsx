@@ -1,4 +1,5 @@
 import { AddEmployeeModal } from '@/components/add-employee-modal';
+import { ViewAttendanceModal } from '@/components/view-attendance-modal';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import {
     Trash2,
     UserCheck,
     Users,
+    CalendarDays,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -39,6 +41,14 @@ export default function EmployeeDirectory({
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+    const [selectedEmployeeForAttendance, setSelectedEmployeeForAttendance] = useState<any>(null);
+
+    const openAttendanceModal = (emp: any) => {
+        setSelectedEmployeeForAttendance(emp);
+        setIsAttendanceModalOpen(true);
+    };
 
     const openEditModal = (emp: any) => {
         setEditingEmployee(emp);
@@ -208,6 +218,13 @@ export default function EmployeeDirectory({
                                                             <Pencil className="h-4 w-4" />
                                                         </button>
                                                         <button 
+                                                            onClick={() => openAttendanceModal(emp)}
+                                                            className="text-emerald-500 hover:text-emerald-700 transition-colors"
+                                                            title="View Attendance"
+                                                        >
+                                                            <CalendarDays className="h-4 w-4" />
+                                                        </button>
+                                                        <button 
                                                             onClick={emp.role === 'admin' || emp.role === 'superadmin' ? undefined : () => handleDelete(emp.id)}
                                                             className={`transition-colors ${emp.role === 'admin' || emp.role === 'superadmin' ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:text-red-700'}`}
                                                             title={emp.role === 'admin' || emp.role === 'superadmin' ? "Cannot delete admin" : "Delete"}
@@ -266,6 +283,12 @@ export default function EmployeeDirectory({
                 nextEmployeeId={nextEmployeeId}
                 employee={editingEmployee}
                 allUsers={employees}
+            />
+
+            <ViewAttendanceModal 
+                isOpen={isAttendanceModalOpen}
+                setIsOpen={setIsAttendanceModalOpen}
+                employee={selectedEmployeeForAttendance}
             />
         </SidebarProvider>
     );

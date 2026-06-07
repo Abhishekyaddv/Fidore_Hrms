@@ -12,12 +12,18 @@ class Attendance extends Model
         'punch_in',
         'punch_out',
         'minutes_late',
+        'punch_history',
+        'total_logged_minutes',
+        'is_regularized',
+        'regularized_by',
     ];
 
     protected $casts = [
         'date' => 'date',
         'punch_in' => 'datetime',
         'punch_out' => 'datetime',
+        'punch_history' => 'array',
+        'is_regularized' => 'boolean',
     ];
 
     public function user()

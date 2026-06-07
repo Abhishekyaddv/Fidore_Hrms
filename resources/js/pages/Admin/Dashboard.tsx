@@ -19,6 +19,8 @@ interface Attendance {
     date: string;
     punch_in: string | null;
     punch_out: string | null;
+    punch_history: { in: string; out: string | null }[] | null;
+    total_logged_minutes: number;
     created_at: string;
     updated_at: string;
 }
@@ -141,8 +143,14 @@ export default function AdminDashboard({
         }
     };
 
+    const isPunchedIn = () => {
+        if (!todayAttendance) return false;
+        const history = todayAttendance.punch_history || [];
+        return history.length > 0 && history[history.length - 1].out === null;
+    };
+
     const handlePunch = () => {
-        if (!todayAttendance || !todayAttendance.punch_in) {
+        if (!isPunchedIn()) {
             if (preFetchedLocation) {
                 router.post(route('attendance.punch-in'), preFetchedLocation, {
                     preserveScroll: true,
@@ -162,7 +170,7 @@ export default function AdminDashboard({
             } else {
                 alert('Geolocation is not supported by your browser.');
             }
-        } else if (!todayAttendance.punch_out) {
+        } else {
             router.post(route('attendance.punch-out'), {}, {
                 preserveScroll: true,
             });
@@ -170,7 +178,7 @@ export default function AdminDashboard({
     };
 
     const getPunchButtonState = () => {
-        if (!todayAttendance || !todayAttendance.punch_in) {
+        if (!isPunchedIn()) {
             return {
                 text: 'PUNCH IN',
                 disabled: false,
@@ -178,19 +186,11 @@ export default function AdminDashboard({
                 icon: <MapPin className="h-4 w-4" />
             };
         }
-        if (!todayAttendance.punch_out) {
-            return {
-                text: 'PUNCH OUT',
-                disabled: false,
-                className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
-                icon: <Clock className="h-4 w-4" />
-            };
-        }
         return {
-            text: 'COMPLETED',
-            disabled: true,
-            className: 'w-full sm:w-auto bg-emerald-600 opacity-80 text-surface-0 font-semibold cursor-not-allowed h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
-            icon: <CheckCircle2 className="h-4 w-4" />
+            text: 'PUNCH OUT',
+            disabled: false,
+            className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+            icon: <Clock className="h-4 w-4" />
         };
     };
 
@@ -234,20 +234,14 @@ export default function AdminDashboard({
                                 </div>
                             </div>
 
-                            {todayAttendance && (todayAttendance.punch_in || todayAttendance.punch_out) && (
+                            {todayAttendance && (
                                 <div className="flex flex-wrap gap-4 text-xs font-semibold mb-6 text-text-secondary bg-surface-1 p-3 rounded-lg border border-border w-fit">
-                                    {todayAttendance.punch_in && (
-                                        <div>
-                                            <span className="text-text-muted">PUNCHED IN: </span>
-                                            <span className="text-success-text font-mono">{formatTime(todayAttendance.punch_in)}</span>
-                                        </div>
-                                    )}
-                                    {todayAttendance.punch_out && (
-                                        <div className="border-l border-border pl-4">
-                                            <span className="text-text-muted">PUNCHED OUT: </span>
-                                            <span className="text-danger-text font-mono">{formatTime(todayAttendance.punch_out)}</span>
-                                        </div>
-                                    )}
+                                    <div>
+                                        <span className="text-text-muted">TOTAL LOGGED TODAY: </span>
+                                        <span className="text-brand-600 dark:text-accent-500 font-mono text-sm">
+                                            {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
+                                        </span>
+                                    </div>
                                 </div>
                             )}
 

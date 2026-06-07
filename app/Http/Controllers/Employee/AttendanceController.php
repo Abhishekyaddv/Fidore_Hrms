@@ -18,8 +18,9 @@ class AttendanceController extends Controller
             ['user_id' => $user->id, 'date' => $today]
         );
 
-        if ($attendance->punch_in) {
-            return back()->withErrors(['punch_in' => 'Already punched in for today.']);
+        $history = is_array($attendance->punch_history) ? $attendance->punch_history : [];
+        if (!empty($history) && end($history)['out'] === null) {
+            return back()->withErrors(['punch_in' => 'Already punched in.']);
         }
 
         $request->validate([
@@ -27,10 +28,22 @@ class AttendanceController extends Controller
             'longitude' => 'nullable|numeric',
         ]);
 
-        $attendance->update([
-            'punch_in' => now(),
-            'minutes_late' => 0,
-        ]);
+        $now = now();
+        $history[] = [
+            'in' => $now->toIso8601String(),
+            'out' => null,
+        ];
+
+        $updateData = [
+            'punch_history' => $history,
+        ];
+
+        if (!$attendance->punch_in) {
+            $updateData['punch_in'] = $now;
+            $updateData['minutes_late'] = 0;
+        }
+
+        $attendance->update($updateData);
 
         if ($request->filled('latitude') && $request->filled('longitude')) {
             UserLocation::create([
@@ -54,16 +67,32 @@ class AttendanceController extends Controller
             ->where('date', $today)
             ->first();
 
-        if (!$attendance || !$attendance->punch_in) {
+        if (!$attendance) {
             return back()->withErrors(['punch_out' => 'You must punch in first.']);
         }
 
-        if ($attendance->punch_out) {
-            return back()->withErrors(['punch_out' => 'Already punched out for today.']);
+        $history = is_array($attendance->punch_history) ? $attendance->punch_history : [];
+        if (empty($history) || end($history)['out'] !== null) {
+            return back()->withErrors(['punch_out' => 'You are not currently punched in.']);
+        }
+
+        $now = now();
+        $lastIndex = count($history) - 1;
+        $history[$lastIndex]['out'] = $now->toIso8601String();
+
+        $totalMinutes = 0;
+        foreach ($history as $session) {
+            if ($session['out']) {
+                $inTime = \Carbon\Carbon::parse($session['in']);
+                $outTime = \Carbon\Carbon::parse($session['out']);
+                $totalMinutes += $inTime->diffInMinutes($outTime);
+            }
         }
 
         $attendance->update([
-            'punch_out' => now(),
+            'punch_out' => $now,
+            'punch_history' => $history,
+            'total_logged_minutes' => $totalMinutes,
         ]);
 
         return back()->with('success', 'Punched out successfully.');

@@ -215,4 +215,90 @@ class EmployeeController extends Controller
 
         return redirect()->route('admin.employees.index')->with('success', 'Employee deleted successfully.');
     }
+
+    public function regularizeAttendance(Request $request, $id)
+    {
+        $this->checkAccess();
+
+        $request->validate([
+            'date' => 'required|date',
+            'out_time' => 'required|date_format:H:i',
+        ]);
+
+        $user = \App\Models\User::findOrFail($id);
+        $date = $request->date;
+        $outTime = \Carbon\Carbon::parse("$date {$request->out_time}");
+
+        // Check if employee has already been regularized 2 times this month
+        $startOfMonth = \Carbon\Carbon::parse($date)->startOfMonth()->toDateString();
+        $endOfMonth = \Carbon\Carbon::parse($date)->endOfMonth()->toDateString();
+        
+        $regularizationCount = \App\Models\Attendance::where('user_id', $user->id)
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->where('is_regularized', true)
+            ->count();
+
+        if ($regularizationCount >= 2) {
+            return back()->withErrors(['regularize' => 'Employee has already reached the maximum of 2 regularizations this month.']);
+        }
+
+        $attendance = \App\Models\Attendance::where('user_id', $user->id)
+            ->where('date', $date)
+            ->first();
+
+        if (!$attendance) {
+            return back()->withErrors(['regularize' => 'No attendance record found for this date.']);
+        }
+
+        $history = is_array($attendance->punch_history) ? $attendance->punch_history : [];
+        if (empty($history) || end($history)['out'] !== null) {
+            return back()->withErrors(['regularize' => 'No open punch session found to regularize.']);
+        }
+
+        // Close the open session
+        $lastIndex = count($history) - 1;
+        
+        $inTime = \Carbon\Carbon::parse($history[$lastIndex]['in']);
+        if ($outTime->lt($inTime)) {
+            return back()->withErrors(['out_time' => 'Out time cannot be before punch-in time.']);
+        }
+
+        $history[$lastIndex]['out'] = $outTime->toIso8601String();
+
+        $totalMinutes = 0;
+        foreach ($history as $session) {
+            if ($session['out']) {
+                $sessionIn = \Carbon\Carbon::parse($session['in']);
+                $sessionOut = \Carbon\Carbon::parse($session['out']);
+                $totalMinutes += $sessionIn->diffInMinutes($sessionOut);
+            }
+        }
+
+        $attendance->update([
+            'punch_out' => $outTime,
+            'punch_history' => $history,
+            'total_logged_minutes' => $totalMinutes,
+            'is_regularized' => true,
+            'regularized_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Attendance regularized successfully.');
+    }
+
+    public function getAttendanceCalendar(Request $request, $id)
+    {
+        $this->checkAccess();
+
+        $request->validate([
+            'month' => 'required|integer|between:1,12',
+            'year' => 'required|integer',
+        ]);
+
+        $attendances = \App\Models\Attendance::where('user_id', $id)
+            ->whereMonth('date', $request->month)
+            ->whereYear('date', $request->year)
+            ->get(['date', 'total_logged_minutes', 'punch_history', 'is_regularized']);
+
+        return response()->json($attendances);
+    }
 }

@@ -124,6 +124,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('designations', \App\Http\Controllers\Admin\DesignationController::class);
         Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
         
+        Route::post('employees/{id}/regularize', [\App\Http\Controllers\Admin\EmployeeController::class, 'regularizeAttendance'])->name('employees.regularize');
+        Route::get('employees/{id}/attendance', [\App\Http\Controllers\Admin\EmployeeController::class, 'getAttendanceCalendar'])->name('employees.attendance');
+        
         // Admin Leave Management
         Route::get('leaves', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'index'])->name('leaves.index');
         Route::post('leaves/holidays', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storeHoliday'])->name('leaves.holidays.store');
