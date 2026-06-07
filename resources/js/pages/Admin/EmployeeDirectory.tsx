@@ -265,6 +265,7 @@ export default function EmployeeDirectory({
                 designations={designations}
                 nextEmployeeId={nextEmployeeId}
                 employee={editingEmployee}
+                allUsers={employees}
             />
         </SidebarProvider>
     );

@@ -70,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
             return Inertia::render('Admin/Dashboard', [
                 'designations' => $designations,
                 'nextEmployeeId' => $nextEmployeeId,
+                'employees' => \App\Models\User::whereIn('role', ['employee', 'hr', 'superadmin'])->with('designation')->get(),
                 'todayAttendance' => $todayAttendance,
                 'stats' => [
                     'totalEmployees' => $totalEmployees,
@@ -130,7 +131,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('leaves/policies', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storePolicy'])->name('leaves.policies.store');
 
         Route::patch('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'updateRequestStatus'])->name('leaves.requests.update');
-        Route::delete('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'destroyRequest'])->name('leaves.requests.destroy');
     });
 
     // Employee My Leaves

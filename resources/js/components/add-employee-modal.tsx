@@ -38,6 +38,7 @@ interface AddEmployeeModalProps {
     designations: Designation[];
     nextEmployeeId?: string;
     employee?: any;
+    allUsers?: any[];
 }
 
 const DEPARTMENTS = [
@@ -55,6 +56,7 @@ export function AddEmployeeModal({
     designations,
     nextEmployeeId,
     employee,
+    allUsers,
 }: AddEmployeeModalProps) {
     const isEditMode = !!employee;
 
@@ -73,6 +75,7 @@ export function AddEmployeeModal({
         custom_cl: employee?.custom_cl ?? '',
         custom_sl: employee?.custom_sl ?? '',
         custom_el: employee?.custom_el ?? '',
+        reporting_manager_id: employee?.reporting_manager_id?.toString() || '',
     });
 
     // Update Employee ID when nextEmployeeId changes (on successful creations)
@@ -95,9 +98,12 @@ export function AddEmployeeModal({
                 custom_cl: employee.custom_cl ?? '',
                 custom_sl: employee.custom_sl ?? '',
                 custom_el: employee.custom_el ?? '',
+                reporting_manager_id: employee.reporting_manager_id?.toString() || '',
             });
         }
     }, [nextEmployeeId, isOpen, isEditMode, employee]);
+
+    const availableManagers = (allUsers || []).filter(u => u.designation_id?.toString() === data.designation_id && u.id !== employee?.id);
 
     // Reset when modal opens/closes
     useEffect(() => {
@@ -419,6 +425,36 @@ export function AddEmployeeModal({
                                 />
                                 {errors.password && (
                                     <p className="text-xs font-medium text-danger-text">{errors.password}</p>
+                                )}
+                            </div>
+
+                            {/* Reporting Manager */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="reporting_manager" className="text-xs font-semibold text-text-secondary">
+                                    Reporting Manager
+                                </Label>
+                                <Select
+                                    value={data.reporting_manager_id}
+                                    onValueChange={(value) => setData('reporting_manager_id', value)}
+                                >
+                                    <SelectTrigger
+                                        id="reporting_manager"
+                                        className="h-10 border-border focus:ring-accent-500 bg-transparent text-left text-text-primary"
+                                    >
+                                        <SelectValue placeholder="Select Manager" />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-border bg-surface-0">
+                                        {availableManagers.length > 0 ? availableManagers.map((mgr) => (
+                                            <SelectItem key={mgr.id} value={mgr.id.toString()}>
+                                                {mgr.name}
+                                            </SelectItem>
+                                        )) : (
+                                            <div className="p-2 text-xs text-text-muted text-center">No users found with this designation.</div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {errors.reporting_manager_id && (
+                                    <p className="text-xs font-medium text-danger-text">{errors.reporting_manager_id}</p>
                                 )}
                             </div>
                         </div>

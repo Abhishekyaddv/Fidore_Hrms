@@ -424,8 +424,13 @@ export default function Dashboard({
                                     <Building2 className="h-5 w-5 text-accent-700" />
                                 </div>
                             </div>
-                            <div className="mt-4 text-xs font-semibold text-success-text flex items-center gap-1.5">
-                                <CheckCircle className="h-4 w-4" /> Active Status
+                            <div className="mt-4 flex items-center justify-between">
+                                <div className="text-xs font-semibold text-success-text flex items-center gap-1.5">
+                                    <CheckCircle className="h-4 w-4" /> Active Status
+                                </div>
+                                <div className="text-[10px] font-bold px-2 py-1 bg-brand-50 text-brand-700 rounded-md uppercase tracking-wider border border-brand-200">
+                                    {employee.employment_type || 'N/A'}
+                                </div>
                             </div>
                         </div>
                     </div>

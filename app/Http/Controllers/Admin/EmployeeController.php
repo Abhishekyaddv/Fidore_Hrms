@@ -86,6 +86,7 @@ class EmployeeController extends Controller
             'custom_cl' => 'nullable|integer',
             'custom_sl' => 'nullable|integer',
             'custom_el' => 'nullable|integer',
+            'reporting_manager_id' => 'nullable|exists:users,id',
         ], [
             'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
         ]);
@@ -114,6 +115,7 @@ class EmployeeController extends Controller
             'custom_cl' => $request->custom_cl,
             'custom_sl' => $request->custom_sl,
             'custom_el' => $request->custom_el,
+            'reporting_manager_id' => $request->reporting_manager_id,
         ]);
 
         return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully.');
@@ -152,6 +154,7 @@ class EmployeeController extends Controller
             'custom_cl' => 'nullable|integer',
             'custom_sl' => 'nullable|integer',
             'custom_el' => 'nullable|integer',
+            'reporting_manager_id' => 'nullable|exists:users,id',
         ], [
             'employee_id.regex' => 'The Employee ID must start with "EMP-" followed by a sequence number.',
         ]);
@@ -179,6 +182,7 @@ class EmployeeController extends Controller
             'custom_cl' => $request->custom_cl,
             'custom_sl' => $request->custom_sl,
             'custom_el' => $request->custom_el,
+            'reporting_manager_id' => $request->reporting_manager_id,
         ];
 
         if ($request->filled('password')) {

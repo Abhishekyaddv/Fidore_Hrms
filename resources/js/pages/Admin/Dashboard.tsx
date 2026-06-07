@@ -55,6 +55,7 @@ interface AdminDashboardProps {
     todayAttendance: Attendance | null;
     stats: Stats;
     recentLeaveRequests: LeaveRequest[];
+    employees?: any[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -70,6 +71,7 @@ export default function AdminDashboard({
     todayAttendance,
     stats,
     recentLeaveRequests = [],
+    employees = [],
 }: AdminDashboardProps) {
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
     const { auth } = usePage<SharedData>().props;
@@ -467,6 +469,7 @@ export default function AdminDashboard({
                 setIsOpen={setIsAddEmployeeOpen}
                 designations={designations}
                 nextEmployeeId={nextEmployeeId}
+                allUsers={employees}
             />
         </AppLayout>
     );

@@ -77,12 +77,6 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
         }
     };
 
-    const handleDeleteRequest = (id: number) => {
-        if (confirm('Are you sure you want to delete this leave request? This action cannot be undone.')) {
-            router.delete(route('admin.leaves.requests.destroy', id));
-        }
-    };
-
     const openEditModal = (req: any) => {
         setEditingRequest(req);
         setEditStatus(req.status);
@@ -676,13 +670,6 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                                                 <Pencil className="h-4 w-4" />
                                                             </button>
                                                         )}
-                                                        <button
-                                                            onClick={() => handleDeleteRequest(req.id)}
-                                                            className="rounded-lg border border-gray-200 bg-white p-1.5 text-red-500 shadow-sm transition-colors hover:bg-red-50"
-                                                            title="Delete Request"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>

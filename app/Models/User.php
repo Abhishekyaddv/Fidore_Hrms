@@ -37,6 +37,7 @@ class User extends Authenticatable
         'custom_cl',
         'custom_sl',
         'custom_el',
+        'reporting_manager_id',
     ];
 
     /**
@@ -61,6 +62,14 @@ class User extends Authenticatable
     public function designation()
     {
         return $this->belongsTo(Designation::class);
+    }
+
+    /**
+     * Get the reporting manager of the user.
+     */
+    public function reportingManager()
+    {
+        return $this->belongsTo(User::class, 'reporting_manager_id');
     }
 
     /**

@@ -101,12 +101,7 @@ class LeaveManagementController extends Controller
         return redirect()->back()->with('success', 'Leave request updated successfully.');
     }
 
-    public function destroyRequest(LeaveRequest $leaveRequest)
-    {
-        $this->checkAdmin();
-        $leaveRequest->delete();
-        return redirect()->back()->with('success', 'Leave request deleted successfully.');
-    }
+
 
 
 }

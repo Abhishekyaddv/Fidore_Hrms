@@ -11,6 +11,7 @@ import { router } from '@inertiajs/react';
 
 export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRequests, leaveHistory = [], attendances = [], currentMonth }: any) {
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    const [deniedModal, setDeniedModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
     // Form
     const { data, setData, post, processing, reset, errors } = useForm({
@@ -23,6 +24,29 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
 
     const submitLeave = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (data.type && data.type !== 'LWP' && data.start_date && data.end_date) {
+            const start = new Date(data.start_date);
+            const end = new Date(data.end_date);
+            if (end >= start) {
+                const requestedDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+                const balance = balances[data.type];
+                if (balance) {
+                    const available = Math.max(0, balance.total - balance.used);
+                    if (requestedDays > available) {
+                        const message = `You requested ${requestedDays} days, but only have ${available} ${data.type} leaves remaining.`;
+                        try {
+                            setDeniedModal({ isOpen: true, message });
+                        } catch (e) {
+                            // Fallback window alert
+                            window.alert(`Leave Request Denied: ${message}`);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
         post(route('my-leaves.store'), {
             onSuccess: () => {
                 reset();
@@ -421,6 +445,29 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                 </div>
 
             </div>
+
+            {/* Denied Notification Modal */}
+            <Dialog open={deniedModal.isOpen} onOpenChange={(isOpen) => setDeniedModal(prev => ({ ...prev, isOpen }))}>
+                <DialogContent className="sm:max-w-md bg-surface-0 border-border p-6 shadow-xl rounded-xl">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="h-16 w-16 rounded-full bg-danger-bg flex items-center justify-center">
+                            <AlertCircle className="h-8 w-8 text-danger-text" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-text-primary tracking-tight">Leave Request Denied</h3>
+                            <p className="text-sm font-medium text-text-secondary">
+                                {deniedModal.message}
+                            </p>
+                        </div>
+                        <Button 
+                            className="w-full mt-4 bg-gray-900 hover:bg-gray-800 text-white rounded-lg h-10 font-medium"
+                            onClick={() => setDeniedModal({ isOpen: false, message: '' })}
+                        >
+                            Got it, I'll adjust the dates
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
