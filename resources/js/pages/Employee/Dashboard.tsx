@@ -28,6 +28,11 @@ interface Employee {
     joining_date: string | null;
     employment_type: string | null;
     designation: Designation | null;
+    reportingManager?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
 }
 
 interface Attendance {
@@ -425,6 +430,26 @@ export default function Dashboard({
                                 <div className="text-[10px] font-bold px-2 py-1 bg-brand-50 text-brand-700 rounded-md uppercase tracking-wider border border-brand-200">
                                     {employee.employment_type || 'N/A'}
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Reporting Manager Card */}
+                        <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                                        Reporting Manager
+                                    </p>
+                                    <h3 className="text-lg font-bold text-text-primary mt-2.5">
+                                        {employee.reportingManager ? employee.reportingManager.name : 'Not Assigned'}
+                                    </h3>
+                                </div>
+                                <div className="p-3 bg-purple-50 rounded-lg shrink-0">
+                                    <Briefcase className="h-5 w-5 text-purple-700" />
+                                </div>
+                            </div>
+                            <div className="mt-4 text-xs font-medium text-text-muted">
+                                {employee.reportingManager ? employee.reportingManager.email : 'N/A'}
                             </div>
                         </div>
                     </div>

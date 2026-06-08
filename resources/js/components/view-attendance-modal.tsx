@@ -29,6 +29,7 @@ export function ViewAttendanceModal({
     // Regularization Modal State
     const [isRegularizeOpen, setIsRegularizeOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string>('');
+    const [inTime, setInTime] = useState('09:00');
     const [outTime, setOutTime] = useState('18:00');
 
     const year = currentDate.getFullYear();
@@ -110,7 +111,22 @@ export function ViewAttendanceModal({
             grid.push(
                 <div 
                     key={dateStr} 
-                    className={`relative flex flex-col items-center justify-center p-3 rounded-xl border border-border shadow-xs transition-all ${bgColor} ${isToday ? 'ring-2 ring-brand-500' : ''}`}
+                    className={`group relative flex flex-col items-center justify-center p-3 rounded-xl border border-border shadow-xs transition-all cursor-pointer hover:ring-2 hover:ring-brand-500 hover:ring-opacity-50 ${bgColor} ${isToday ? 'ring-2 ring-brand-500' : ''}`}
+                    onClick={() => {
+                        setSelectedDate(dateStr);
+                        // Pre-fill in_time if there's an open session
+                        if (record && record.punch_history && record.punch_history.length > 0) {
+                            const lastSession = record.punch_history[record.punch_history.length - 1];
+                            if (lastSession.out === null) {
+                                const dateObj = new Date(lastSession.in);
+                                setInTime(dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
+                            }
+                        } else {
+                            setInTime('09:00');
+                        }
+                        setOutTime('18:00');
+                        setIsRegularizeOpen(true);
+                    }}
                 >
                     <span className={`text-sm font-bold ${textColor}`}>{day}</span>
                     {record && !needsRegularization && (
@@ -119,23 +135,20 @@ export function ViewAttendanceModal({
                         </div>
                     )}
                     {needsRegularization && (
-                        <Button 
-                            variant="destructive" 
-                            size="sm" 
-                            className="mt-1 h-6 text-[10px] px-2 py-0 bg-danger-text hover:bg-danger-600 w-full"
-                            onClick={() => {
-                                setSelectedDate(dateStr);
-                                setIsRegularizeOpen(true);
-                            }}
-                        >
-                            Regularize
-                        </Button>
+                        <div className="mt-1 text-[10px] px-2 py-0.5 rounded bg-danger-text text-white font-semibold w-full text-center">
+                            Open
+                        </div>
                     )}
                     {record?.is_regularized && (
                         <div className="absolute top-1 right-1 text-brand-600 dark:text-accent-500" title="Regularized by HR">
                             <CheckCircle className="h-3 w-3" />
                         </div>
                     )}
+                    
+                    {/* Hover indicator for regularization */}
+                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition-opacity pointer-events-none">
+                        <Clock className="h-6 w-6 text-brand-600 drop-shadow-md" />
+                    </div>
                 </div>
             );
         }
@@ -147,6 +160,7 @@ export function ViewAttendanceModal({
         e.preventDefault();
         router.post(route('admin.employees.regularize', employee.id), {
             date: selectedDate,
+            in_time: inTime,
             out_time: outTime,
         }, {
             onSuccess: () => {
@@ -240,17 +254,32 @@ export function ViewAttendanceModal({
                                 {selectedDate}
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="out_time" className="text-text-secondary text-xs uppercase font-bold tracking-wider">Set Punch Out Time</Label>
-                            <Input
-                                id="out_time"
-                                type="time"
-                                value={outTime}
-                                onChange={(e) => setOutTime(e.target.value)}
-                                className="bg-surface-0 border-border text-text-primary focus:border-brand-500"
-                                required
-                            />
-                            <p className="text-xs text-text-muted">Maximum 2 regularizations allowed per month.</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="in_time" className="text-text-secondary text-xs uppercase font-bold tracking-wider">Punch In Time</Label>
+                                <Input
+                                    id="in_time"
+                                    type="time"
+                                    value={inTime}
+                                    onChange={(e) => setInTime(e.target.value)}
+                                    className="bg-surface-0 border-border text-text-primary focus:border-brand-500"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="out_time" className="text-text-secondary text-xs uppercase font-bold tracking-wider">Punch Out Time</Label>
+                                <Input
+                                    id="out_time"
+                                    type="time"
+                                    value={outTime}
+                                    onChange={(e) => setOutTime(e.target.value)}
+                                    className="bg-surface-0 border-border text-text-primary focus:border-brand-500"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-xs text-text-muted mt-2">Maximum 2 regularizations allowed per month.</p>
                         </div>
                         <div className="flex justify-end gap-3 pt-4 border-t border-border">
                             <Button type="button" variant="ghost" onClick={() => setIsRegularizeOpen(false)} className="text-text-secondary hover:text-text-primary hover:bg-surface-1">

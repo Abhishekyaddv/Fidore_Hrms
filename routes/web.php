@@ -86,7 +86,7 @@ Route::middleware(['auth'])->group(function () {
             ]);
         }
 
-        $user->load('designation');
+        $user->load(['designation', 'reportingManager']);
         $todayAttendance = \App\Models\Attendance::where('user_id', $user->id)
             ->where('date', now()->toDateString())
             ->first();
@@ -143,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Company Policies
     Route::resource('company-policies', \App\Http\Controllers\CompanyPolicyController::class)->only(['index', 'store', 'update', 'destroy'])->middleware(\App\Http\Middleware\CheckBearerToken::class);
+    Route::get('company-policies/{companyPolicy}/download', [\App\Http\Controllers\CompanyPolicyController::class, 'download'])->name('company-policies.download')->middleware(\App\Http\Middleware\CheckBearerToken::class);
 
     // Attendance
     Route::post('attendance/punch-in', [\App\Http\Controllers\Employee\AttendanceController::class, 'punchIn'])->name('attendance.punch-in')->middleware(\App\Http\Middleware\CheckBearerToken::class);

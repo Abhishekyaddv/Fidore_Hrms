@@ -219,7 +219,7 @@ export default function CompanyPolicies({ policies = [] }: any) {
                                             </div>
                                             
                                             <a 
-                                                href={policy.document_path ? `/storage/${policy.document_path}` : '#'} 
+                                                href={policy.document_path ? route('company-policies.download', policy.id) : '#'} 
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex items-center gap-1.5 text-sm font-semibold text-[#0D4E78] hover:text-[#4CB5F9] transition-colors"

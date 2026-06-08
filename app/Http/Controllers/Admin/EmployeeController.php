@@ -222,12 +222,18 @@ class EmployeeController extends Controller
 
         $request->validate([
             'date' => 'required|date',
+            'in_time' => 'required|date_format:H:i',
             'out_time' => 'required|date_format:H:i',
         ]);
 
         $user = \App\Models\User::findOrFail($id);
         $date = $request->date;
+        $inTime = \Carbon\Carbon::parse("$date {$request->in_time}");
         $outTime = \Carbon\Carbon::parse("$date {$request->out_time}");
+
+        if ($outTime->lt($inTime)) {
+            return back()->withErrors(['out_time' => 'Out time cannot be before punch-in time.']);
+        }
 
         // Check if employee has already been regularized 2 times this month
         $startOfMonth = \Carbon\Carbon::parse($date)->startOfMonth()->toDateString();
@@ -242,28 +248,31 @@ class EmployeeController extends Controller
             return back()->withErrors(['regularize' => 'Employee has already reached the maximum of 2 regularizations this month.']);
         }
 
-        $attendance = \App\Models\Attendance::where('user_id', $user->id)
-            ->where('date', $date)
-            ->first();
-
-        if (!$attendance) {
-            return back()->withErrors(['regularize' => 'No attendance record found for this date.']);
-        }
+        $attendance = \App\Models\Attendance::firstOrCreate(
+            ['user_id' => $user->id, 'date' => $date],
+            [
+                'punch_history' => [],
+                'total_logged_minutes' => 0,
+                'is_regularized' => false,
+            ]
+        );
 
         $history = is_array($attendance->punch_history) ? $attendance->punch_history : [];
-        if (empty($history) || end($history)['out'] !== null) {
-            return back()->withErrors(['regularize' => 'No open punch session found to regularize.']);
-        }
-
-        // Close the open session
-        $lastIndex = count($history) - 1;
         
-        $inTime = \Carbon\Carbon::parse($history[$lastIndex]['in']);
-        if ($outTime->lt($inTime)) {
-            return back()->withErrors(['out_time' => 'Out time cannot be before punch-in time.']);
+        // If there's an open session, close it. Otherwise, add a new session.
+        if (!empty($history) && end($history)['out'] === null) {
+            $lastIndex = count($history) - 1;
+            // Optionally update the in_time of the open session if provided?
+            // The user expects the provided in_time and out_time to be used.
+            $history[$lastIndex]['in'] = $inTime->toIso8601String();
+            $history[$lastIndex]['out'] = $outTime->toIso8601String();
+        } else {
+            // Append new session
+            $history[] = [
+                'in' => $inTime->toIso8601String(),
+                'out' => $outTime->toIso8601String()
+            ];
         }
-
-        $history[$lastIndex]['out'] = $outTime->toIso8601String();
 
         $totalMinutes = 0;
         foreach ($history as $session) {
@@ -275,7 +284,8 @@ class EmployeeController extends Controller
         }
 
         $attendance->update([
-            'punch_out' => $outTime,
+            'punch_in' => $history[0]['in'],
+            'punch_out' => end($history)['out'],
             'punch_history' => $history,
             'total_logged_minutes' => $totalMinutes,
             'is_regularized' => true,

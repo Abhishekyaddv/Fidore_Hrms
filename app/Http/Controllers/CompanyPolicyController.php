@@ -103,4 +103,16 @@ class CompanyPolicyController extends Controller
 
         return redirect()->back()->with('success', 'Policy deleted successfully.');
     }
+
+    /**
+     * Download the specified policy document.
+     */
+    public function download(CompanyPolicy $companyPolicy)
+    {
+        if (!$companyPolicy->document_path || !\Illuminate\Support\Facades\Storage::disk('public')->exists($companyPolicy->document_path)) {
+            abort(404, 'Document not found.');
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->download($companyPolicy->document_path);
+    }
 }
