@@ -69,10 +69,10 @@ export default function EmployeeDirectory({
         }
     };
 
-    const filteredEmployees = employees.filter((emp: any) => 
+    const employeeList = employees.data || employees;
+    const filteredEmployees = employeeList.filter((emp: any) => 
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (emp.department && emp.department.toLowerCase().includes(searchQuery.toLowerCase()))
+        (emp.designation?.display_name || emp.role).toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -87,7 +87,7 @@ export default function EmployeeDirectory({
                         <Search className="h-4 w-4 text-gray-400 shrink-0" />
                         <Input 
                             type="text" 
-                            placeholder="Search employees, roles, or departments..." 
+                            placeholder="Search employees or roles..." 
                             className="h-auto border-0 bg-transparent p-0 text-sm focus-visible:ring-0 shadow-none w-full"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -137,36 +137,7 @@ export default function EmployeeDirectory({
                             </div>
                         </div>
 
-                        {/* Filters */}
-                        <div className="flex flex-wrap items-center gap-3 mb-6">
-                            <Select defaultValue="all-dept">
-                                <SelectTrigger className="w-[180px] bg-white border-gray-200 text-gray-600">
-                                    <SelectValue placeholder="All Departments" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all-dept">All Departments</SelectItem>
-                                    <SelectItem value="engineering">Engineering</SelectItem>
-                                    <SelectItem value="design">Design</SelectItem>
-                                    <SelectItem value="hr">Human Resources</SelectItem>
-                                </SelectContent>
-                            </Select>
 
-                            <Select defaultValue="all-status">
-                                <SelectTrigger className="w-[160px] bg-white border-gray-200 text-gray-600">
-                                    <SelectValue placeholder="All Statuses" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all-status">All Statuses</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="remote">Remote</SelectItem>
-                                    <SelectItem value="on-leave">On Leave</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Button variant="outline" className="border-gray-200 text-gray-600 bg-white gap-2 flex items-center">
-                                <Filter className="h-4 w-4 text-gray-400" /> Advanced Filters
-                            </Button>
-                        </div>
 
                         {/* Data Table */}
                         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
@@ -248,28 +219,28 @@ export default function EmployeeDirectory({
                             </div>
 
                             {/* Pagination */}
-                            <div className="border-t border-gray-100 bg-white px-6 py-4 flex items-center justify-between">
-                                <p className="text-xs text-gray-500 font-medium">
-                                    Showing {filteredEmployees.length} of {totalStaff} employees
-                                </p>
-                                <div className="flex items-center gap-1">
-                                    <Button variant="outline" size="icon" className="h-8 w-8 text-gray-500 border-gray-200" disabled>
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="outline" className="h-8 w-8 bg-[#4CB5F9] text-white border-[#4CB5F9] hover:bg-[#3AA5E9] hover:text-white">
-                                        1
-                                    </Button>
-                                    <Button variant="outline" className="h-8 w-8 text-gray-600 border-gray-200">
-                                        2
-                                    </Button>
-                                    <Button variant="outline" className="h-8 w-8 text-gray-600 border-gray-200">
-                                        3
-                                    </Button>
-                                    <Button variant="outline" size="icon" className="h-8 w-8 text-gray-500 border-gray-200">
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
+                            {employees.links && (
+                                <div className="border-t border-gray-100 bg-white px-6 py-4 flex items-center justify-between">
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        Showing {employees.from || 0} to {employees.to || 0} of {employees.total || 0} employees
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                        {employees.links.map((link: any, index: number) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => link.url && router.visit(link.url, { preserveScroll: true })}
+                                                disabled={!link.url}
+                                                className={`h-8 px-3 rounded-md border text-sm font-medium transition-colors ${
+                                                    link.active
+                                                        ? 'bg-[#4CB5F9] text-white border-[#4CB5F9]'
+                                                        : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                                                } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                     </div>
@@ -282,7 +253,7 @@ export default function EmployeeDirectory({
                 designations={designations}
                 nextEmployeeId={nextEmployeeId}
                 employee={editingEmployee}
-                allUsers={employees}
+                allUsers={employeeList}
             />
 
             <ViewAttendanceModal 

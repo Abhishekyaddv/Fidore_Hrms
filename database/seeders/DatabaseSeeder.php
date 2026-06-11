@@ -56,20 +56,5 @@ class DatabaseSeeder extends Seeder
             'role' => 'superadmin',
         ]);
 
-        // Create some employees and link to designations
-        User::factory(5)->create([
-            'designation_id' => $engDesignation->id,
-            'role' => $engDesignation->role,
-        ]);
-
-        User::factory(2)->create([
-            'designation_id' => $uiDesignation->id,
-            'role' => $uiDesignation->role,
-        ]);
-
-        User::factory(1)->create([
-            'designation_id' => $hrDesignation->id,
-            'role' => $hrDesignation->role,
-        ]);
     }
 }

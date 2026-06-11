@@ -184,7 +184,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
 
             const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
             const dayOfWeek = new Date(year, month, day).getDay();
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+            const isWeekend = dayOfWeek === 0; // Sunday
             const isPublicHoliday = holiday && holiday.name !== 'Weekly Off (Sunday)';
 
             let boxClasses = "group relative flex h-24 flex-col rounded-xl border p-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors hover:border-[#4CB5F9] ";
@@ -247,9 +247,9 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                             <DialogTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    className="h-10 border-gray-200 px-4 font-semibold text-[#051C3F] shadow-sm hover:bg-gray-50"
+                                    className="h-10 border-[#194182] px-4 font-semibold text-[#08295e] shadow-sm hover:bg-[#194182]/10"
                                 >
-                                    <Settings2 className="mr-2 h-4 w-4 text-gray-500" /> Configure Policy
+                                    <Settings2 className="mr-2 h-4 w-4 text-[#09234d]" /> Configure Policy
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[500px]">
@@ -258,7 +258,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                 </DialogHeader>
                                 <form onSubmit={submitPolicy} className="mt-4 space-y-6">
                                     {policyData.policies.map((policy, index) => (
-                                        <div key={policy.employment_type} className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                                        <div key={policy.employment_type} className="space-y-3 rounded-xl bg-[#194182]/10 p-4">
                                             <div className="flex items-center gap-2">
                                                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4CB5F9]/10 text-[#4CB5F9]">
                                                     <Settings2 className="h-3 w-3" />
@@ -314,7 +314,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
                                             </div>
                                         </div>
                                     ))}
-                                    <Button type="submit" disabled={policyProcessing} className="w-full bg-[#4CB5F9] hover:bg-[#3AA5E9]">
+                                    <Button type="submit" disabled={policyProcessing} className="w-full bg-[#08324d] hover:bg-[#062234]">
                                         Save All Policies
                                     </Button>
                                 </form>
@@ -323,7 +323,7 @@ export default function LeaveManagement({ holidays, policies, leaveRequests }: a
 
                         <Dialog open={isHolidayModalOpen} onOpenChange={setIsHolidayModalOpen}>
                             <DialogTrigger asChild>
-                                <Button className="h-10 bg-[#4CB5F9] px-4 font-semibold text-white shadow-sm hover:bg-[#3AA5E9]">
+                                <Button className="h-10 bg-[#194182] px-4 font-semibold text-white shadow-sm hover:bg-[#092f47]">
                                     <Plus className="mr-2 h-4 w-4" /> Add Public Holiday
                                 </Button>
                             </DialogTrigger>

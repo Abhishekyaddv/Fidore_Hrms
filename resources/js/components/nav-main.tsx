@@ -15,7 +15,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             {isActive && (
                                 <motion.div
                                     layoutId="sidebar-active-pill"
-                                    className="absolute inset-0 rounded-full bg-[#1A365D]"
+                                    className="absolute inset-0 rounded-full bg-[#082760]"
                                     initial={false}
                                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                                 />

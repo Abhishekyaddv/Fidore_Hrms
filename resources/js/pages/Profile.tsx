@@ -326,7 +326,7 @@ export default function Profile({ user, manager }: ProfileProps) {
                     <div className="space-y-6">
                         
                         {/* Branded Performance Level Card */}
-                        <div className="rounded-xl border border-brand-800 bg-brand-900 text-white dark:bg-brand-50 p-6 space-y-5 shadow-sm">
+                        {/* <div className="rounded-xl border border-brand-800 bg-brand-900 text-white dark:bg-brand-50 p-6 space-y-5 shadow-sm">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wider text-brand-200">
                                     Performance Level
@@ -345,7 +345,7 @@ export default function Profile({ user, manager }: ProfileProps) {
                                     <div className="h-full bg-accent-500 rounded-full" style={{ width: '85%' }}></div>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Expertise Card */}
                         <div className="rounded-xl border border-border bg-surface-0 p-6 space-y-4 shadow-xs">

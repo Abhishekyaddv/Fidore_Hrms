@@ -291,9 +291,9 @@ export default function Designations({
                                                     <span className="font-semibold text-text-primary text-[15px]">
                                                         {designation.display_name}
                                                     </span>
-                                                    <span className="ml-2.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium tracking-tight bg-surface-2 text-text-secondary">
+                                                    {/* <span className="ml-2.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium tracking-tight bg-surface-2 text-text-secondary">
                                                         {designation.name}
-                                                    </span>
+                                                    </span> */}
                                                     {designation.description && (
                                                         <p className="text-xs text-text-muted mt-1 max-w-md line-clamp-1">
                                                             {designation.description}

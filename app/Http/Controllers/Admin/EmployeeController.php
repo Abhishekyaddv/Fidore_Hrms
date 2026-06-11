@@ -32,9 +32,9 @@ class EmployeeController extends Controller
         $employees = User::whereIn('role', ['employee', 'hr', 'superadmin'])
             ->with('designation')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
 
-        $totalStaff = $employees->count();
+        $totalStaff = $employees->total();
         $activeNow = $totalStaff; // Placeholder as requested
 
         // Calculate next sequential employee ID for the Add Employee modal

@@ -182,14 +182,14 @@ export default function AdminDashboard({
             return {
                 text: 'PUNCH IN',
                 disabled: false,
-                className: 'w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+                className: 'w-full sm:w-fit bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-8 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
                 icon: <MapPin className="h-4 w-4" />
             };
         }
         return {
             text: 'PUNCH OUT',
             disabled: false,
-            className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
+            className: 'w-full sm:w-fit bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-8 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
             icon: <Clock className="h-4 w-4" />
         };
     };
@@ -206,9 +206,9 @@ export default function AdminDashboard({
                         <Button onClick={() => setIsAddEmployeeOpen(true)} className="bg-brand-600 hover:bg-brand-400 text-white cursor-pointer shadow-xs font-semibold">
                             <Plus className="mr-2 h-4 w-4" /> New Hire
                         </Button>
-                        <Button variant="outline" className="border-border text-text-secondary hover:text-text-primary font-semibold">
+                        {/* <Button variant="outline" className="border-border text-text-secondary hover:text-text-primary font-semibold">
                             <Download className="mr-2 h-4 w-4" /> Export Reports
-                        </Button>
+                        </Button> */}
                     </div>
                 </div>
 
@@ -226,10 +226,10 @@ export default function AdminDashboard({
                             </div>
                             
                             <div className="mt-8 flex items-end gap-6 mb-8">
-                                <div className="text-3xl font-bold text-text-primary font-mono tracking-tight">
+                                <div className="text-3xl font-bold text-text-primary font-poppins tracking-tight">
                                     {currentTime || '00:00:00 AM'}
                                 </div>
-                                <div className="text-sm text-text-secondary pb-1 border-l pl-4 border-border">
+                                <div className="text-sm font-poppins text-text-secondary pb-1 border-l pl-4 border-border">
                                     {currentDate || 'Loading date...'}
                                 </div>
                             </div>
@@ -237,8 +237,8 @@ export default function AdminDashboard({
                             {todayAttendance && (
                                 <div className="flex flex-wrap gap-4 text-xs font-semibold mb-6 text-text-secondary bg-surface-1 p-3 rounded-lg border border-border w-fit">
                                     <div>
-                                        <span className="text-text-muted">TOTAL LOGGED TODAY: </span>
-                                        <span className="text-brand-600 dark:text-accent-500 font-mono text-sm">
+                                        <span className="text-text-muted">TOTAL LOGGED TODAY : </span>
+                                        <span className="text-brand-600 dark:text-accent-500 font-poppins text-sm">
                                             {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
                                         </span>
                                     </div>
@@ -304,14 +304,9 @@ export default function AdminDashboard({
                 </div>
 
                 {/* Today's Attendance - Full Width Row */}
-                <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs">
+                <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs w-2/3">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-lg font-bold text-text-primary">Today's Attendance</h2>
-                        <select className="text-sm border border-border bg-surface-2 rounded-md text-text-secondary focus:outline-hidden p-1.5 font-semibold">
-                            <option>All Departments</option>
-                            <option>Engineering</option>
-                            <option>Design</option>
-                        </select>
                     </div>
                     
                     <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
