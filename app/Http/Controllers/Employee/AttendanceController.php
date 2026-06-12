@@ -9,6 +9,20 @@ use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2) {
+        $earthRadius = 6371000; // in meters
+        
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lonDelta = deg2rad($lon2 - $lon1);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($lonDelta / 2) * sin($lonDelta / 2);
+             
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        
+        return $earthRadius * $c;
+    }
     public function punchIn(Request $request)
     {
         $user = $request->user();
@@ -23,10 +37,29 @@ class AttendanceController extends Controller
             return back()->withErrors(['punch_in' => 'Already punched in.']);
         }
 
+        $officeLocation = \App\Models\OfficeLocation::first();
+        if (!$officeLocation) {
+            return back()->withErrors(['punch_in' => 'Attendance is currently disabled until admin configures the office location.']);
+        }
+
         $request->validate([
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ], [
+            'latitude.required' => 'Location access is required to punch in.',
+            'longitude.required' => 'Location access is required to punch in.',
         ]);
+
+        $distance = $this->calculateDistance(
+            $officeLocation->latitude, 
+            $officeLocation->longitude, 
+            $request->latitude, 
+            $request->longitude
+        );
+
+        if ($distance > $officeLocation->radius_meters) {
+            return back()->withErrors(['punch_in' => 'You must be within ' . $officeLocation->radius_meters . ' meters of the office to punch in. You are currently ' . round($distance) . ' meters away.']);
+        }
 
         $now = now();
         $history[] = [
@@ -61,10 +94,29 @@ class AttendanceController extends Controller
 
     public function punchOut(Request $request)
     {
+        $officeLocation = \App\Models\OfficeLocation::first();
+        if (!$officeLocation) {
+            return back()->withErrors(['punch_out' => 'Attendance is currently disabled until admin configures the office location.']);
+        }
+
         $request->validate([
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ], [
+            'latitude.required' => 'Location access is required to punch out.',
+            'longitude.required' => 'Location access is required to punch out.',
         ]);
+
+        $distance = $this->calculateDistance(
+            $officeLocation->latitude, 
+            $officeLocation->longitude, 
+            $request->latitude, 
+            $request->longitude
+        );
+
+        if ($distance > $officeLocation->radius_meters) {
+            return back()->withErrors(['punch_out' => 'You must be within ' . $officeLocation->radius_meters . ' meters of the office to punch out. You are currently ' . round($distance) . ' meters away.']);
+        }
 
         $user = $request->user();
         $today = now()->toDateString();

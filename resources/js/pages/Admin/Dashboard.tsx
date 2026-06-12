@@ -1,17 +1,10 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, usePage, router, Link } from '@inertiajs/react';
-import { Download, MoreVertical, Plus, Users, CalendarX, MapPin, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { Download, MoreVertical, Plus, Users, CalendarX, MapPin, CheckCircle2, Clock, Loader2, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React, { useState, useEffect } from 'react';
 import { AddEmployeeModal } from '@/components/add-employee-modal';
-
-interface Designation {
-    id: number;
-    name: string;
-    display_name: string;
-    department: string;
-}
 
 interface Attendance {
     id: number;
@@ -25,38 +18,19 @@ interface Attendance {
     updated_at: string;
 }
 
-interface LeaveRequest {
-    id: number;
-    user_id: number;
-    type: string;
-    start_date: string;
-    end_date: string;
-    reason: string;
-    status: string;
-    created_at: string;
-    user?: {
-        name: string;
-        designation?: Designation | null;
-    };
-}
-
 interface Stats {
     totalEmployees: number;
     newEmployeesThisMonth: number;
-    pendingLeaves: number;
     presentCount: number;
-    leaveCount: number;
     lateCount: number;
     absentCount: number;
     presentPercentage: number;
 }
 
 interface AdminDashboardProps {
-    designations: Designation[];
     nextEmployeeId: string;
     todayAttendance: Attendance | null;
     stats: Stats;
-    recentLeaveRequests: LeaveRequest[];
     employees?: any[];
     latestLocation?: {
         id: number;
@@ -64,6 +38,12 @@ interface AdminDashboardProps {
         longitude: number;
         address: string | null;
         type: string;
+    } | null;
+    officeLocation?: {
+        latitude: number;
+        longitude: number;
+        radius_meters: number;
+        address: string | null;
     } | null;
 }
 
@@ -75,26 +55,47 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function AdminDashboard({
-    designations,
     nextEmployeeId,
     todayAttendance,
     stats,
-    recentLeaveRequests = [],
     employees = [],
     latestLocation = null,
+    officeLocation = null,
 }: AdminDashboardProps) {
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
-    const { auth } = usePage<SharedData>().props;
+    const { auth, errors } = usePage<any>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
     const [preFetchedLocation, setPreFetchedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [isPunching, setIsPunching] = useState(false);
+    const [isSettingLocation, setIsSettingLocation] = useState(false);
+
+    const handleSetOfficeLocation = () => {
+        setIsSettingLocation(true);
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    router.post(route('admin.office-location.store'), { latitude, longitude, radius_meters: 50 }, {
+                        preserveScroll: true,
+                        onFinish: () => setIsSettingLocation(false)
+                    });
+                },
+                (error) => {
+                    setIsSettingLocation(false);
+                    alert('Location access is required to set the office location.');
+                }
+            );
+        } else {
+            setIsSettingLocation(false);
+            alert('Geolocation is not supported by your browser.');
+        }
+    };
 
     // Update real-time clock
     useEffect(() => {
         const updateTime = () => {
             const now = new Date();
-            // Format time
             setCurrentTime(
                 now.toLocaleTimeString('en-US', {
                     hour: '2-digit',
@@ -103,7 +104,6 @@ export default function AdminDashboard({
                     hour12: true,
                 })
             );
-            // Format date
             setCurrentDate(
                 now.toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -137,20 +137,6 @@ export default function AdminDashboard({
             }
         }
     }, [todayAttendance]);
-
-    const formatTime = (isoString: string | null) => {
-        if (!isoString) return '';
-        try {
-            const date = new Date(isoString);
-            return date.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-        } catch (e) {
-            return '';
-        }
-    };
 
     const isPunchedIn = () => {
         if (!todayAttendance) return false;
@@ -200,7 +186,6 @@ export default function AdminDashboard({
                         });
                     },
                     (error) => {
-                        // Even if error, we punch out without location
                         router.post(route('attendance.punch-out'), {}, {
                             preserveScroll: true,
                             onFinish: () => setIsPunching(false)
@@ -221,17 +206,15 @@ export default function AdminDashboard({
             return {
                 text: isPunching ? 'PUNCHING IN...' : 'PUNCH IN',
                 disabled: isPunching,
-                className: 'w-full sm:w-fit bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-8 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none disabled:opacity-70 disabled:cursor-not-allowed group relative',
-                icon: isPunching ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />,
-                tooltip: latestLocation?.address ? `Last punched out from: ${latestLocation.address}` : 'Ready to punch in'
+                className: 'w-full sm:w-fit bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold cursor-pointer h-14 px-8 rounded-2xl shadow-[0_8px_20px_-4px_rgba(59,130,246,0.5)] flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed border border-blue-400/30',
+                icon: isPunching ? <Loader2 className="h-5 w-5 animate-spin" /> : <MapPin className="h-5 w-5" />,
             };
         }
         return {
             text: isPunching ? 'PUNCHING OUT...' : 'PUNCH OUT',
             disabled: isPunching,
-            className: 'w-full sm:w-fit bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-8 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none disabled:opacity-70 disabled:cursor-not-allowed group relative',
-            icon: isPunching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />,
-            tooltip: latestLocation?.address ? `Punched in from: ${latestLocation.address}` : 'Punched in'
+            className: 'w-full sm:w-fit bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold cursor-pointer h-14 px-8 rounded-2xl shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed border border-orange-400/30',
+            icon: isPunching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Clock className="h-5 w-5" />,
         };
     };
 
@@ -240,53 +223,87 @@ export default function AdminDashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Admin Dashboard" />
-            <div className="flex flex-1 flex-col gap-6 p-6 bg-surface-1 min-h-screen">
-                {/* Header Action Section */}
-                <div className="flex justify-end gap-4">
-                    <div className="flex items-center gap-3">
-                        <Button onClick={() => setIsAddEmployeeOpen(true)} className="bg-brand-600 hover:bg-brand-400 text-white cursor-pointer shadow-xs font-semibold">
-                            <Plus className="mr-2 h-4 w-4" /> New Hire
+            
+            {/* Main Wrapper with decorative glassmorphism background */}
+            <div className="relative flex flex-1 flex-col p-4 sm:p-6 lg:p-8 min-h-screen overflow-hidden bg-slate-50">
+                
+                {/* Background Blur Blobs */}
+                <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-blue-300/30 rounded-full blur-[100px] mix-blend-multiply animate-pulse duration-10000 pointer-events-none"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-indigo-300/30 rounded-full blur-[100px] mix-blend-multiply animate-pulse duration-10000 delay-1000 pointer-events-none"></div>
+                <div className="absolute top-[40%] left-[60%] w-[30rem] h-[30rem] bg-purple-300/20 rounded-full blur-[80px] mix-blend-multiply pointer-events-none"></div>
+
+                {/* Content Container (Z-index above blobs) */}
+                <div className="relative z-10 flex flex-col gap-6 lg:gap-8 w-full max-w-[1400px] mx-auto">
+                    
+                    {/* Header Action Section */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">Overview</h1>
+                            <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">Monitor your team's attendance and metrics.</p>
+                        </div>
+                        <Button 
+                            onClick={() => setIsAddEmployeeOpen(true)} 
+                            className="w-full sm:w-auto bg-white/60 backdrop-blur-md hover:bg-white text-indigo-600 border border-indigo-100 cursor-pointer shadow-lg shadow-indigo-100/50 font-bold rounded-2xl px-6 py-6 transition-all duration-300 active:scale-95"
+                        >
+                            <Plus className="mr-2 h-5 w-5" /> New Hire
                         </Button>
-                        {/* <Button variant="outline" className="border-border text-text-secondary hover:text-text-primary font-semibold">
-                            <Download className="mr-2 h-4 w-4" /> Export Reports
-                        </Button> */}
                     </div>
-                </div>
 
-                {/* Top Grid - Punch In & Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Punch In Card */}
-                    <div className="md:col-span-2 rounded-xl border border-border bg-surface-0 flex flex-col sm:flex-row overflow-hidden shadow-xs">
-                        <div className="p-6 flex flex-col justify-between flex-1">
-                            <div>
-                                <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text mb-4">
-                                    <Clock className="mr-1 h-3.5 w-3.5" /> Working Hours
-                                </span>
-                                <h2 className="text-xl font-bold text-text-primary mb-1">Attendance Punch</h2>
-                                <p className="text-sm text-text-secondary">Log your daily work hours from your registered location.</p>
-                            </div>
+                    {/* Top Grid - Punch In & Stats */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        
+                        {/* Punch In Card (Glass) */}
+                        <div className="lg:col-span-2 rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row relative">
+                            {/* Inner Glass Highlights */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-50 pointer-events-none"></div>
                             
-                            <div className="mt-8 flex items-end gap-6 mb-8">
-                                <div className="text-3xl font-bold text-text-primary font-poppins tracking-tight">
-                                    {currentTime || '00:00:00 AM'}
+                            <div className="p-6 sm:p-8 flex flex-col justify-between flex-1 relative z-10">
+                                <div>
+                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100/80 px-3 py-1.5 text-xs font-bold text-indigo-700 mb-6 backdrop-blur-md shadow-sm border border-indigo-200/50">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+                                        Live Status
+                                    </div>
+                                    <h2 className="text-2xl font-extrabold text-slate-800 mb-2">Attendance Terminal</h2>
+                                    <p className="text-slate-500 font-medium">Log your daily work hours from your registered location.</p>
+                                    
+                                    {errors?.punch_in && (
+                                        <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-md text-red-600 text-sm rounded-2xl border border-red-200 font-semibold shadow-sm">
+                                            {errors.punch_in}
+                                        </div>
+                                    )}
+                                    {errors?.punch_out && (
+                                        <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-md text-red-600 text-sm rounded-2xl border border-red-200 font-semibold shadow-sm">
+                                            {errors.punch_out}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="text-sm font-poppins text-text-secondary pb-1 border-l pl-4 border-border">
-                                    {currentDate || 'Loading date...'}
-                                </div>
-                            </div>
-
-                            {todayAttendance && (
-                                <div className="flex flex-wrap gap-4 text-xs font-semibold mb-6 text-text-secondary bg-surface-1 p-3 rounded-lg border border-border w-fit">
-                                    <div>
-                                        <span className="text-text-muted">TOTAL LOGGED TODAY : </span>
-                                        <span className="text-brand-600 dark:text-accent-500 font-poppins text-sm">
-                                            {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
-                                        </span>
+                                
+                                <div className="mt-10 mb-8">
+                                    <div className="text-4xl sm:text-5xl font-black text-slate-800 tracking-tighter drop-shadow-sm">
+                                        {currentTime || '00:00:00 AM'}
+                                    </div>
+                                    <div className="text-sm sm:text-base font-bold text-slate-500 mt-2 flex items-center gap-2">
+                                        <CalendarX className="w-4 h-4" />
+                                        {currentDate || 'Loading date...'}
                                     </div>
                                 </div>
-                            )}
 
-                            <div className="relative group/tooltip inline-block w-full sm:w-auto">
+                                {todayAttendance && (
+                                    <div className="flex flex-wrap gap-4 text-xs font-bold mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm w-fit">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-indigo-100 rounded-lg">
+                                                <Clock className="w-4 h-4 text-indigo-600" />
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-500 block text-[10px] uppercase tracking-widest">Total Logged Today</span>
+                                                <span className="text-indigo-600 text-base">
+                                                    {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={handlePunch}
                                     disabled={buttonState.disabled}
@@ -294,218 +311,170 @@ export default function AdminDashboard({
                                 >
                                     {buttonState.icon} {buttonState.text}
                                 </button>
+                            </div>
+                            
+                            {/* Decorative Map Graphic Right Side */}
+                            <div className="hidden md:flex w-2/5 relative bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border-l border-white/40 items-center justify-center p-8">
+                                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-400 via-transparent to-transparent"></div>
+                                <div className="relative flex flex-col items-center justify-center space-y-4">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
+                                        <div className="bg-gradient-to-b from-blue-500 to-indigo-600 p-4 rounded-full shadow-[0_0_30px_rgba(59,130,246,0.3)] border-4 border-white relative z-10">
+                                            <Navigation className="text-white h-8 w-8 fill-white/20" />
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+                                            GPS Active
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Stats Stack (Glass) */}
+                        <div className="flex flex-col gap-6 lg:gap-8">
+                            
+                            {/* Total Employees */}
+                            <div className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                                <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-100/50 rounded-full blur-2xl"></div>
+                                <div className="flex justify-between items-start relative z-10">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Total Workforce</p>
+                                        <h3 className="text-4xl font-black text-slate-800 mt-2 drop-shadow-sm">{stats.totalEmployees.toLocaleString()}</h3>
+                                    </div>
+                                    <div className="p-3.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-sm backdrop-blur-sm">
+                                        <Users className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex items-center text-sm font-bold text-emerald-600 bg-emerald-50/50 w-fit px-3 py-1.5 rounded-xl border border-emerald-100/50 backdrop-blur-sm relative z-10">
+                                    <svg className="w-4 h-4 mr-1.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                    +{stats.newEmployeesThisMonth} this month
+                                </div>
+                            </div>
+
+                            {/* Office Location */}
+                            <div className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                                <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-amber-100/50 rounded-full blur-2xl"></div>
+                                <div className="flex justify-between items-start relative z-10">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Geofencing</p>
+                                        <h3 className="text-xl font-extrabold text-slate-800 mt-2">
+                                            {officeLocation ? 'Active & Set' : 'Not Configured'}
+                                        </h3>
+                                    </div>
+                                    <div className={`p-3.5 rounded-2xl border shadow-sm backdrop-blur-sm ${officeLocation ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                                        <MapPin className={`h-6 w-6 ${officeLocation ? 'text-emerald-600' : 'text-amber-600'}`} />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex flex-col gap-4 relative z-10">
+                                    {officeLocation?.address && (
+                                        <div className="text-[13px] bg-white/50 backdrop-blur-md p-3 rounded-2xl text-slate-600 border border-white/60 shadow-sm leading-relaxed">
+                                            <span className="font-bold text-slate-800">HQ:</span> {officeLocation.address}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <span className="text-[13px] font-bold text-slate-500 bg-slate-100/50 px-3 py-1.5 rounded-xl border border-slate-200/50 w-fit">
+                                            {officeLocation ? `Radius: ${officeLocation.radius_meters}m` : 'Action Required'}
+                                        </span>
+                                        <Button 
+                                            size="sm" 
+                                            onClick={handleSetOfficeLocation}
+                                            disabled={isSettingLocation}
+                                            className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white cursor-pointer shadow-lg shadow-slate-800/20 rounded-xl font-bold transition-all active:scale-95"
+                                        >
+                                            {isSettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : (officeLocation ? 'Update Pin' : 'Set Location')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* Today's Attendance - Full Width Row */}
+                    <div className="w-full lg:w-2/3 rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 relative overflow-hidden">
+                        {/* Decorative background flare */}
+                        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 relative z-10 gap-4">
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">Today's Attendance</h2>
+                                <p className="text-sm font-medium text-slate-500 mt-1">Daily overview of staff presence</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-col md:flex-row items-center gap-8 lg:gap-12 relative z-10">
+                            {/* Premium Circle Chart */}
+                            <div className="relative w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center shrink-0">
+                                {/* Subtle inner drop shadow ring */}
+                                <div className="absolute inset-0 rounded-full shadow-[inset_0_4px_20px_rgba(0,0,0,0.03)] border border-white/50"></div>
                                 
-                                {/* Tooltip */}
-                                <div className="absolute z-10 invisible group-hover/tooltip:visible opacity-0 group-hover/tooltip:opacity-100 transition duration-300 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-sm tooltip dark:bg-gray-700 whitespace-nowrap pointer-events-none">
-                                    {buttonState.tooltip}
-                                    <div className="tooltip-arrow" data-popper-arrow></div>
+                                <svg className="w-full h-full transform -rotate-90 drop-shadow-md" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/60" />
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="40"
+                                        fill="none"
+                                        stroke="url(#gradient)"
+                                        strokeWidth="8"
+                                        strokeDasharray="251.2"
+                                        strokeDashoffset={251.2 * (1 - stats.presentPercentage / 100)}
+                                        className="transition-all duration-1000 ease-out"
+                                        strokeLinecap="round"
+                                    />
+                                    <defs>
+                                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#4F46E5" /> {/* Indigo-600 */}
+                                            <stop offset="100%" stopColor="#3B82F6" /> {/* Blue-500 */}
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div className="absolute flex flex-col items-center justify-center text-center">
+                                    <span className="text-3xl sm:text-4xl font-black text-slate-800 tracking-tighter">{stats.presentPercentage}%</span>
+                                    <span className="text-[10px] sm:text-xs font-black text-indigo-500 uppercase tracking-widest mt-1">Present</span>
                                 </div>
                             </div>
-                        </div>
-                        <div className="hidden sm:block w-1/3 bg-surface-2 relative border-l border-border">
-                            <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMzl2MWg0MHYtMXpNMCBwaDF2NDBIMHoiIGZpbGw9IiNjdXJyZW50Q29sb3IiLz4KPC9zdmc+')] mix-blend-multiply dark:mix-blend-overlay"></div>
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center space-y-2">
-                                <div className="bg-emerald-600 p-2.5 rounded-full border-4 border-white shadow-lg inline-block animate-pulse">
-                                    <MapPin className="text-white h-5 w-5" />
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 w-full">
+                                {/* Present */}
+                                <div className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Present</p>
+                                    </div>
+                                    <p className="text-3xl font-black text-slate-800">{stats.presentCount}</p>
                                 </div>
-                                <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
-                                    Inside Office GPS
-                                </p>
+                                
+                                {/* Late */}
+                                <div className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Late Arrivals</p>
+                                    </div>
+                                    <p className="text-3xl font-black text-amber-600">{stats.lateCount}</p>
+                                </div>
+                                
+                                {/* Absent */}
+                                <div className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Absent</p>
+                                    </div>
+                                    <p className="text-3xl font-black text-red-500">{stats.absentCount}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Stats Stack */}
-                    <div className="flex flex-col gap-6">
-                        {/* Total Employees */}
-                        <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Total Employees</p>
-                                    <h3 className="text-3xl font-bold text-text-primary mt-2">{stats.totalEmployees.toLocaleString()}</h3>
-                                </div>
-                                <div className="p-3 bg-brand-50 rounded-lg">
-                                    <Users className="h-5 w-5 text-brand-600" />
-                                </div>
-                            </div>
-                            <div className="mt-4 flex items-center text-sm font-semibold text-success-text">
-                                <svg className="w-4 h-4 mr-1 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                +{stats.newEmployeesThisMonth} this month
-                            </div>
-                        </div>
-
-                        {/* Pending Leaves */}
-                        <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Pending Leaves</p>
-                                    <h3 className="text-3xl font-bold text-text-primary mt-2">{stats.pendingLeaves}</h3>
-                                </div>
-                                <div className="p-3 bg-danger-bg rounded-lg">
-                                    <CalendarX className="h-5 w-5 text-danger-text" />
-                                </div>
-                            </div>
-                            <div className="mt-4 text-xs font-semibold text-danger-text">
-                                Requires immediate action
-                            </div>
-                        </div>
-                    </div>
                 </div>
-
-                {/* Today's Attendance - Full Width Row */}
-                <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs w-2/3">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-lg font-bold text-text-primary">Today's Attendance</h2>
-                    </div>
-                    
-                    <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
-                        {/* Circle Chart */}
-                        <div className="relative w-48 h-48 flex items-center justify-center">
-                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-2" />
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="40"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="8"
-                                    strokeDasharray="251.2"
-                                    strokeDashoffset={251.2 * (1 - stats.presentPercentage / 100)}
-                                    className="text-brand-600 dark:text-accent-500"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            <div className="absolute flex flex-col items-center justify-center text-center">
-                                <span className="text-3xl font-bold text-text-primary">{stats.presentPercentage}%</span>
-                                <span className="text-xs font-bold text-text-muted tracking-wider">PRESENT</span>
-                            </div>
-                        </div>
-
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 gap-4 flex-1 w-full">
-                            <div className="bg-surface-2 p-4 rounded-lg">
-                                <p className="text-xs font-semibold text-text-secondary mb-1">Present</p>
-                                <p className="text-xl font-bold text-text-primary">{stats.presentCount}</p>
-                            </div>
-                            <div className="bg-surface-2 p-4 rounded-lg">
-                                <p className="text-xs font-semibold text-text-secondary mb-1">On Leave</p>
-                                <p className="text-xl font-bold text-accent-700 dark:text-accent-500">{stats.leaveCount}</p>
-                            </div>
-                            <div className="bg-surface-2 p-4 rounded-lg">
-                                <p className="text-xs font-semibold text-text-secondary mb-1">Late Arrivals</p>
-                                <p className="text-xl font-bold text-warning-text">{stats.lateCount}</p>
-                            </div>
-                            <div className="bg-surface-2 p-4 rounded-lg">
-                                <p className="text-xs font-semibold text-text-secondary mb-1">Absent</p>
-                                <p className="text-xl font-bold text-danger-text">{stats.absentCount}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Recent Leave Requests */}
-                <div className="rounded-xl border border-border bg-surface-0 overflow-hidden shadow-xs">
-                    <div className="p-6 flex justify-between items-center border-b border-border">
-                        <h2 className="text-lg font-bold text-text-primary">Recent Leave Requests</h2>
-                        <Link href={route('admin.leaves.index')} className="text-sm font-medium text-accent-700 dark:text-accent-500 hover:underline">View All</Link>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-text-secondary uppercase bg-surface-2 border-b border-border font-semibold tracking-wider">
-                                <tr>
-                                    <th scope="col" className="px-6 py-4">Employee</th>
-                                    <th scope="col" className="px-6 py-4">Type</th>
-                                    <th scope="col" className="px-6 py-4">Dates</th>
-                                    <th scope="col" className="px-6 py-4">Status</th>
-                                    <th scope="col" className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentLeaveRequests.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center text-text-secondary font-medium">
-                                            No recent leave requests found.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    recentLeaveRequests.map((req) => {
-                                        const initials = req.user?.name
-                                            ? req.user.name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
-                                            : '??';
-
-                                        const formatLeaveDate = (dateStr: string) => {
-                                            try {
-                                                const d = new Date(dateStr);
-                                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                            } catch (e) {
-                                                return dateStr;
-                                            }
-                                        };
-
-                                        const startFormatted = formatLeaveDate(req.start_date);
-                                        const endFormatted = formatLeaveDate(req.end_date);
-                                        const dateRange = startFormatted === endFormatted ? startFormatted : `${startFormatted} - ${endFormatted}`;
-
-                                        const getStatusBadge = (status: string) => {
-                                            switch (status.toLowerCase()) {
-                                                case 'approved':
-                                                    return (
-                                                        <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text">
-                                                            Approved
-                                                        </span>
-                                                    );
-                                                case 'rejected':
-                                                    return (
-                                                        <span className="inline-flex items-center rounded-full bg-danger-bg px-2.5 py-1 text-xs font-semibold text-danger-text">
-                                                            Rejected
-                                                        </span>
-                                                    );
-                                                default:
-                                                    return (
-                                                        <span className="inline-flex items-center rounded-full bg-warning-bg px-2.5 py-1 text-xs font-semibold text-warning-text">
-                                                            Pending
-                                                        </span>
-                                                    );
-                                            }
-                                        };
-
-                                        return (
-                                            <tr key={req.id} className="bg-surface-0 border-b border-border hover:bg-surface-1 transition-colors">
-                                                <td className="px-6 py-4 flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 dark:text-brand-900 flex items-center justify-center font-bold text-xs">
-                                                        {initials}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-semibold text-text-primary">{req.user?.name || 'Unknown User'}</div>
-                                                        <div className="text-xs text-text-muted">{req.user?.designation?.display_name || 'Employee'}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-text-secondary">{req.type}</td>
-                                                <td className="px-6 py-4 text-text-secondary">{dateRange}</td>
-                                                <td className="px-6 py-4">
-                                                    {getStatusBadge(req.status)}
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button className="text-text-muted hover:text-text-primary transition-all cursor-pointer">
-                                                        <MoreVertical className="h-5 w-5 ml-auto" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
             
             <AddEmployeeModal
                 isOpen={isAddEmployeeOpen}
                 setIsOpen={setIsAddEmployeeOpen}
-                designations={designations}
                 nextEmployeeId={nextEmployeeId}
                 allUsers={employees}
             />

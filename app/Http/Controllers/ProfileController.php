@@ -17,7 +17,7 @@ class ProfileController extends Controller
      */
     public function show(Request $request): Response
     {
-        $user = $request->user()->load('designation');
+        $user = $request->user();
         
         // Find a suitable manager from user directory (excluding current user)
         $manager = User::where('id', '!=', $user->id)
@@ -29,7 +29,7 @@ class ProfileController extends Controller
             $managerData = [
                 'name' => $manager->name,
                 'email' => $manager->email,
-                'designation' => $manager->designation?->display_name ?? ($manager->role === 'superadmin' ? 'Super Administrator' : 'HR Manager'),
+                'designation' => $manager->role === 'superadmin' ? 'Super Administrator' : 'HR Manager',
                 'avatar' => $manager->avatar,
             ];
         } else {

@@ -23,7 +23,6 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'designation_id',
         'dob',
         'gender',
         'phone',
@@ -33,10 +32,6 @@ class User extends Authenticatable
         'bio',
         'avatar',
         'emergency_contact',
-        'custom_leave_year',
-        'custom_cl',
-        'custom_sl',
-        'custom_el',
         'reporting_manager_id',
     ];
 
@@ -57,27 +52,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the designation of the user.
-     */
-    public function designation()
-    {
-        return $this->belongsTo(Designation::class);
-    }
-
-    /**
      * Get the reporting manager of the user.
      */
     public function reportingManager()
     {
         return $this->belongsTo(User::class, 'reporting_manager_id');
-    }
-
-    /**
-     * Get the leave requests of the user.
-     */
-    public function leaveRequests()
-    {
-        return $this->hasMany(LeaveRequest::class);
     }
 
     /**

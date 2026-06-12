@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('leave_policies', function (Blueprint $table) {
+        Schema::create('office_locations', function (Blueprint $table) {
             $table->id();
-            $table->string('employment_type')->unique(); // 'Probation', 'Full-time'
-            $table->integer('cl')->default(0); // Casual leaves
-            $table->integer('sl')->default(0); // Sick leaves
-            $table->integer('el')->default(0); // Earned leaves
+            $table->decimal('latitude', 10, 8);
+            $table->decimal('longitude', 11, 8);
+            $table->integer('radius_meters')->default(50);
+            $table->string('address')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leave_policies');
+        Schema::dropIfExists('office_locations');
     }
 };

@@ -9,15 +9,10 @@ import {
     Clock,
     MapPin,
     Loader2,
+    Navigation,
+    AlertTriangle
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-
-interface Designation {
-    id: number;
-    name: string;
-    display_name: string;
-    department: string;
-}
 
 interface Employee {
     id: number;
@@ -28,7 +23,6 @@ interface Employee {
     department: string | null;
     joining_date: string | null;
     employment_type: string | null;
-    designation: Designation | null;
     reportingManager?: {
         id: number;
         name: string;
@@ -49,35 +43,22 @@ interface Attendance {
     updated_at: string;
 }
 
-interface Holiday {
-    id: number;
-    name: string;
-    date: string;
-    description: string | null;
-}
-
-interface LeaveRequest {
-    id: number;
-    user_id: number;
-    type: string;
-    start_date: string;
-    end_date: string;
-    reason: string;
-    status: string;
-}
-
 interface DashboardProps {
     employee: Employee;
     todayAttendance: Attendance | null;
     monthAttendances?: Attendance[];
-    holidays?: Holiday[];
-    leaveRequests?: LeaveRequest[];
     latestLocation?: {
         id: number;
         latitude: number;
         longitude: number;
         address: string | null;
         type: string;
+    } | null;
+    officeLocation?: {
+        latitude: number;
+        longitude: number;
+        radius_meters: number;
+        address: string | null;
     } | null;
 }
 
@@ -92,11 +73,10 @@ export default function Dashboard({
     employee,
     todayAttendance,
     monthAttendances = [],
-    holidays = [],
-    leaveRequests = [],
     latestLocation = null,
+    officeLocation = null,
 }: DashboardProps) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, errors } = usePage<any>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
     const [preFetchedLocation, setPreFetchedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -106,7 +86,6 @@ export default function Dashboard({
     useEffect(() => {
         const updateTime = () => {
             const now = new Date();
-            // Format time
             setCurrentTime(
                 now.toLocaleTimeString('en-US', {
                     hour: '2-digit',
@@ -115,7 +94,6 @@ export default function Dashboard({
                     hour12: true,
                 })
             );
-            // Format date
             setCurrentDate(
                 now.toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -212,7 +190,6 @@ export default function Dashboard({
                         });
                     },
                     (error) => {
-                        // Even if error, we punch out without location
                         router.post(route('attendance.punch-out'), {}, {
                             preserveScroll: true,
                             onFinish: () => setIsPunching(false)
@@ -229,20 +206,30 @@ export default function Dashboard({
     };
 
     const getPunchButtonState = () => {
+        if (!officeLocation) {
+             return {
+                text: 'ATTENDANCE DISABLED',
+                disabled: true,
+                className: 'w-full sm:w-fit bg-slate-800/40 backdrop-blur-md text-white font-bold cursor-not-allowed h-14 px-8 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all border border-white/20',
+                icon: <MapPin className="h-5 w-5 opacity-50" />,
+                tooltip: 'Admin needs to configure the office location first'
+             };
+        }
+
         if (!isPunchedIn()) {
             return {
                 text: isPunching ? 'PUNCHING IN...' : 'PUNCH IN',
                 disabled: isPunching,
-                className: 'w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none disabled:opacity-70 disabled:cursor-not-allowed group relative',
-                icon: isPunching ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />,
+                className: 'w-full sm:w-fit bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold cursor-pointer h-14 px-8 rounded-2xl shadow-[0_8px_20px_-4px_rgba(59,130,246,0.5)] flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed border border-blue-400/30 group relative',
+                icon: isPunching ? <Loader2 className="h-5 w-5 animate-spin" /> : <MapPin className="h-5 w-5" />,
                 tooltip: latestLocation?.address ? `Last punched out from: ${latestLocation.address}` : 'Ready to punch in'
             };
         }
         return {
             text: isPunching ? 'PUNCHING OUT...' : 'PUNCH OUT',
             disabled: isPunching,
-            className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none disabled:opacity-70 disabled:cursor-not-allowed group relative',
-            icon: isPunching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />,
+            className: 'w-full sm:w-fit bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold cursor-pointer h-14 px-8 rounded-2xl shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed border border-orange-400/30 group relative',
+            icon: isPunching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Clock className="h-5 w-5" />,
             tooltip: latestLocation?.address ? `Punched in from: ${latestLocation.address}` : 'Punched in'
         };
     };
@@ -277,17 +264,9 @@ export default function Dashboard({
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday = dateStr === todayDateStr;
 
-            // Check if holiday
-            const holiday = holidays.find((h) => h.date === dateStr);
-            const isPublicHoliday = holiday && holiday.name !== 'Weekly Off (Sunday)';
-            
-            // Check if leave
-            const leave = leaveRequests.find((l) => {
-                const start = new Date(l.start_date);
-                const end = new Date(l.end_date);
-                const current = new Date(dateStr);
-                return current >= start && current <= end;
-            });
+            // Check if weekly off (Sunday)
+            const dateObj = new Date(year, month, day);
+            const isWeeklyOff = dateObj.getDay() === 0;
 
             // Check if attendance exists
             const attendance = monthAttendances.find((a) => {
@@ -298,39 +277,27 @@ export default function Dashboard({
             let indicatorColor = '';
             let tooltip = '';
 
-            if (isPublicHoliday) {
-                indicatorColor = 'bg-rose-500';
-                tooltip = `Holiday: ${holiday.name}`;
-            } else if (holiday && !isPublicHoliday) {
-                indicatorColor = 'bg-gray-300';
-                tooltip = `Weekly Off`;
-            } else if (leave) {
-                if (leave.status === 'approved') {
-                    indicatorColor = 'bg-emerald-500';
-                    tooltip = `Approved Leave: ${leave.type}`;
-                } else if (leave.status === 'pending') {
-                    indicatorColor = 'bg-amber-500';
-                    tooltip = `Pending Leave: ${leave.type}`;
-                } else {
-                    indicatorColor = 'bg-rose-500';
-                    tooltip = `Rejected Leave: ${leave.type}`;
-                }
-            } else if (attendance) {
-                indicatorColor = 'bg-green-600';
+            if (attendance) {
+                indicatorColor = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
                 tooltip = `Present${attendance.minutes_late && attendance.minutes_late > 0 ? ` (${attendance.minutes_late}m late)` : ''}`;
+            } else if (isWeeklyOff) {
+                indicatorColor = 'bg-slate-300';
+                tooltip = `Weekly Off`;
             }
 
             grid.push(
                 <div 
                     key={day} 
-                    className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-semibold relative hover:bg-surface-2 transition-colors cursor-pointer ${
-                        isToday ? 'bg-brand-50 text-brand-800 border border-brand-400/30' : 'text-text-primary'
+                    className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold relative transition-all duration-200 cursor-pointer ${
+                        isToday 
+                        ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-lg shadow-indigo-500/30 border border-white/20' 
+                        : 'text-slate-600 hover:bg-white/50 hover:shadow-sm border border-transparent'
                     }`}
                     title={tooltip || `${monthNames[month]} ${day}, ${year}`}
                 >
                     <span>{day}</span>
                     {indicatorColor && (
-                        <span className={`w-1.5 h-1.5 rounded-full absolute bottom-1 ${indicatorColor}`}></span>
+                        <span className={`w-1.5 h-1.5 rounded-full absolute bottom-1.5 ${indicatorColor}`}></span>
                     )}
                 </div>
             );
@@ -349,236 +316,258 @@ export default function Dashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Employee Dashboard" />
-            <div className="flex flex-1 flex-col gap-6 p-6 bg-surface-1 min-h-screen">
+            
+            {/* Main Wrapper with decorative glassmorphism background */}
+            <div className="relative flex flex-1 flex-col p-4 sm:p-6 lg:p-8 min-h-screen overflow-hidden bg-slate-50">
                 
-                {/* Greeting Header */}
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-                        Good Morning, {auth.user.name}
-                    </h1>
-                    <p className="text-text-secondary mt-1">
-                        Here is your overview for today.
-                    </p>
-                </div>
+                {/* Background Blur Blobs */}
+                <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-blue-300/30 rounded-full blur-[100px] mix-blend-multiply animate-pulse duration-10000 pointer-events-none"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-indigo-300/30 rounded-full blur-[100px] mix-blend-multiply animate-pulse duration-10000 delay-1000 pointer-events-none"></div>
+                <div className="absolute top-[40%] left-[60%] w-[30rem] h-[30rem] bg-purple-300/20 rounded-full blur-[80px] mix-blend-multiply pointer-events-none"></div>
 
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Content Container */}
+                <div className="relative z-10 flex flex-col gap-6 lg:gap-8 w-full max-w-[1400px] mx-auto">
                     
-                    {/* Time Clock Card */}
-                    <div className="md:col-span-2 rounded-xl border border-border bg-surface-0 flex flex-col sm:flex-row overflow-hidden shadow-xs">
-                        <div className="p-6 flex flex-col justify-between flex-1">
-                            <div>
-                                <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-text mb-4">
-                                    <Clock className="mr-1 h-3.5 w-3.5" /> Working Hours
-                                </span>
-                                {todayAttendance && todayAttendance.minutes_late && todayAttendance.minutes_late > 0 ? (
-                                    <div className="mb-4 p-3.5 rounded-xl bg-warning-bg text-warning-text border border-amber-500/20 text-sm flex items-center gap-3 animate-fade-in shadow-xs">
-                                        <div className="p-1.5 bg-amber-500/10 rounded-md">
-                                            <span className="text-base">⚠️</span>
-                                        </div>
-                                        <span className="font-semibold">You were {todayAttendance.minutes_late} minutes late today.</span>
-                                    </div>
-                                ) : null}
-                                <h2 className="text-xl font-bold text-text-primary mb-1">
-                                    Attendance Punch
-                                </h2>
-                                <p className="text-sm text-text-secondary">
-                                    Log your daily work hours from your registered location.
-                                </p>
-                            </div>
-
-                            <div className="mt-8 flex items-end gap-5 mb-8">
-                                <div className="text-3xl font-bold text-text-primary font-mono tracking-tight">
-                                    {currentTime || '00:00:00 AM'}
-                                </div>
-                                <div className="text-sm text-text-secondary pb-1 border-l pl-4 border-border">
-                                    {currentDate || 'Loading date...'}
-                                </div>
-                            </div>
-
-                            {todayAttendance && (
-                                <div className="flex flex-wrap gap-4 text-xs font-semibold mb-6 text-text-secondary bg-surface-1 p-3 rounded-lg border border-border w-fit">
-                                    <div>
-                                        <span className="text-text-muted">TOTAL LOGGED TODAY: </span>
-                                        <span className="text-brand-600 dark:text-accent-500 font-mono text-sm">
-                                            {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="relative group/tooltip inline-block w-full sm:w-auto">
-                                <button
-                                    onClick={handlePunch}
-                                    disabled={buttonState.disabled}
-                                    className={buttonState.className}
-                                >
-                                    {buttonState.icon} {buttonState.text}
-                                </button>
-                                
-                                {/* Tooltip */}
-                                <div className="absolute z-10 invisible group-hover/tooltip:visible opacity-0 group-hover/tooltip:opacity-100 transition duration-300 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-sm tooltip dark:bg-gray-700 whitespace-nowrap pointer-events-none">
-                                    {buttonState.tooltip}
-                                    <div className="tooltip-arrow" data-popper-arrow></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="hidden sm:block w-1/3 bg-surface-2 relative border-l border-border">
-                            <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMzl2MWg0MHYtMXpNMCBwaDF2NDBIMHoiIGZpbGw9IiNjdXJyZW50Q29sb3IiLz4KPC9zdmc+')] mix-blend-multiply dark:mix-blend-overlay"></div>
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center space-y-2">
-                                <div className="bg-emerald-600 p-2.5 rounded-full border-4 border-white shadow-lg inline-block animate-pulse">
-                                    <MapPin className="text-white h-5 w-5" />
-                                </div>
-                                <p className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
-                                    Inside Office GPS
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stats/Profile Stack */}
-                    <div className="flex flex-col gap-6">
-                        {/* Designation Card */}
-                        <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                                        Designation
-                                    </p>
-                                    <h3 className="text-lg font-bold text-text-primary mt-2.5">
-                                        {employee.designation?.display_name || 'Unassigned'}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-info-bg rounded-lg shrink-0">
-                                    <Briefcase className="h-5 w-5 text-info-text" />
-                                </div>
-                            </div>
-                            <div className="mt-4 text-xs font-mono font-medium text-text-muted">
-                                Code: {employee.designation?.name || 'N/A'}
-                            </div>
-                        </div>
-
-                        {/* Department Card */}
-                        <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                                        Department
-                                    </p>
-                                    <h3 className="text-lg font-bold text-text-primary mt-2.5">
-                                        {employee.department || 'Unassigned'}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-accent-50 rounded-lg shrink-0">
-                                    <Building2 className="h-5 w-5 text-accent-700" />
-                                </div>
-                            </div>
-                            <div className="mt-4 flex items-center justify-between">
-                                <div className="text-xs font-semibold text-success-text flex items-center gap-1.5">
-                                    <CheckCircle className="h-4 w-4" /> Active Status
-                                </div>
-                                <div className="text-[10px] font-bold px-2 py-1 bg-brand-50 text-brand-700 rounded-md uppercase tracking-wider border border-brand-200">
-                                    {employee.employment_type || 'N/A'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Reporting Manager Card */}
-                        <div className="rounded-xl border border-border bg-surface-0 p-6 flex flex-col justify-between shadow-xs">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                                        Reporting Manager
-                                    </p>
-                                    <h3 className="text-lg font-bold text-text-primary mt-2.5">
-                                        {employee.reportingManager ? employee.reportingManager.name : 'Not Assigned'}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-purple-50 rounded-lg shrink-0">
-                                    <Briefcase className="h-5 w-5 text-purple-700" />
-                                </div>
-                            </div>
-                            <div className="mt-4 text-xs font-medium text-text-muted">
-                                {employee.reportingManager ? employee.reportingManager.email : 'N/A'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Activity and Attendance Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left: Recent Activity */}
-                    <div className="lg:col-span-2 rounded-xl border border-border bg-surface-0 p-6 shadow-xs flex flex-col justify-between">
+                    {/* Greeting Header */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <div className="border-b border-border pb-4 mb-4 flex justify-between items-center">
-                                <h2 className="text-lg font-bold text-text-primary">
-                                    My Recent Activity
-                                </h2>
-                                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                                    ID: {employee.employee_id || 'N/A'}
-                                </span>
-                            </div>
-
-                            <div className="text-center py-12 text-text-secondary space-y-2">
-                                <Calendar className="h-10 w-10 mx-auto text-text-muted" />
-                                <h4 className="font-semibold text-[15px] text-text-primary">
-                                    No recent leave records or tasks found
-                                </h4>
-                                <p className="text-xs max-w-xs mx-auto">
-                                    When you log requests, submit timesheets, or check leaves, they will appear here.
-                                </p>
-                            </div>
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+                                Good Morning, {auth.user.name} 👋
+                            </h1>
+                            <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">
+                                Here is your overview for today.
+                            </p>
                         </div>
                     </div>
 
-                    {/* Right: Mini Calendar */}
-                    <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs flex flex-col">
-                        <div className="border-b border-border pb-4 mb-4 flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-brand-600" />
-                                Attendance Calendar
-                            </h2>
-                            <span className="text-xs font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-md">
-                                {monthNames[month]} {year}
-                            </span>
-                        </div>
+                    {/* Top Content Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        
+                        {/* Time Clock Card (Glass) */}
+                        <div className="lg:col-span-2 rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row relative">
+                            {/* Inner Glass Highlights */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-50 pointer-events-none"></div>
+                            
+                            <div className="p-6 sm:p-8 flex flex-col justify-between flex-1 relative z-10">
+                                <div>
+                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100/80 px-3 py-1.5 text-xs font-bold text-indigo-700 mb-6 backdrop-blur-md shadow-sm border border-indigo-200/50">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+                                        Working Hours
+                                    </div>
+                                    
+                                    {todayAttendance && todayAttendance.minutes_late && todayAttendance.minutes_late > 0 ? (
+                                        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 backdrop-blur-md border border-amber-500/20 text-amber-700 text-sm flex items-start sm:items-center gap-3 shadow-sm">
+                                            <div className="p-2 bg-amber-500/20 rounded-xl shrink-0 mt-0.5 sm:mt-0">
+                                                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                                            </div>
+                                            <span className="font-bold leading-relaxed">
+                                                You were marked <span className="text-amber-800">{todayAttendance.minutes_late} minutes late</span> today.
+                                            </span>
+                                        </div>
+                                    ) : null}
 
-                        <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-                                <div key={idx} className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                                    {day}
+                                    <h2 className="text-2xl font-extrabold text-slate-800 mb-2">
+                                        Attendance Terminal
+                                    </h2>
+                                    <p className="text-slate-500 font-medium">
+                                        Log your daily work hours from your registered location.
+                                    </p>
+                                    
+                                    {errors?.punch_in && (
+                                        <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-md text-red-600 text-sm rounded-2xl border border-red-200 font-semibold shadow-sm">
+                                            {errors.punch_in}
+                                        </div>
+                                    )}
+                                    {errors?.punch_out && (
+                                        <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-md text-red-600 text-sm rounded-2xl border border-red-200 font-semibold shadow-sm">
+                                            {errors.punch_out}
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
+
+                                <div className="mt-10 mb-8">
+                                    <div className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-800 tracking-tighter drop-shadow-sm font-sans">
+                                        {currentTime || '00:00:00 AM'}
+                                    </div>
+                                    <div className="text-sm sm:text-base font-bold text-slate-500 mt-3 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4" />
+                                        {currentDate || 'Loading date...'}
+                                    </div>
+                                </div>
+
+                                {todayAttendance && (
+                                    <div className="flex flex-wrap gap-4 text-xs font-bold mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm w-fit">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-indigo-100 rounded-lg">
+                                                <Clock className="w-4 h-4 text-indigo-600" />
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-500 block text-[10px] uppercase tracking-widest">Total Logged Today</span>
+                                                <span className="text-indigo-600 text-base">
+                                                    {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="relative group/tooltip inline-block w-full sm:w-auto">
+                                    <button
+                                        onClick={handlePunch}
+                                        disabled={buttonState.disabled}
+                                        className={buttonState.className}
+                                    >
+                                        {buttonState.icon} {buttonState.text}
+                                    </button>
+                                    
+                                    {/* Tooltip */}
+                                    <div className="absolute z-10 invisible group-hover/tooltip:visible opacity-0 group-hover/tooltip:opacity-100 transition duration-300 bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2.5 text-[11px] font-bold text-white uppercase tracking-wider bg-slate-800 rounded-xl shadow-xl whitespace-nowrap pointer-events-none">
+                                        {buttonState.tooltip}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-800"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Decorative Map Graphic Right Side */}
+                            <div className="hidden md:flex w-2/5 relative bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border-l border-white/40 items-center justify-center p-8">
+                                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-400 via-transparent to-transparent"></div>
+                                <div className="relative flex flex-col items-center justify-center space-y-4">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
+                                        <div className="bg-gradient-to-b from-blue-500 to-indigo-600 p-4 rounded-full shadow-[0_0_30px_rgba(59,130,246,0.3)] border-4 border-white relative z-10">
+                                            <Navigation className="text-white h-8 w-8 fill-white/20" />
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+                                            GPS Active
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-7 gap-1 flex-1">
-                            {renderMiniCalendarDays()}
-                        </div>
+                        {/* Stats/Profile Stack */}
+                        <div className="flex flex-col gap-6 lg:gap-8">
 
-                        {/* Legend */}
-                        <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-semibold text-text-secondary">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-green-600"></span>
-                                Present
+                            {/* Department Card */}
+                            <div className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                                <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-100/50 rounded-full blur-2xl"></div>
+                                <div className="flex justify-between items-start relative z-10">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                                            Department
+                                        </p>
+                                        <h3 className="text-xl font-extrabold text-slate-800 mt-2">
+                                            {employee.department || 'Unassigned'}
+                                        </h3>
+                                    </div>
+                                    <div className="p-3.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-sm backdrop-blur-sm">
+                                        <Building2 className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 relative z-10">
+                                    <div className="text-xs font-bold text-emerald-600 flex items-center gap-1.5 bg-emerald-50/50 px-3 py-1.5 rounded-xl border border-emerald-100/50 backdrop-blur-sm">
+                                        <CheckCircle className="h-4 w-4" /> Active Status
+                                    </div>
+                                    <div className="text-[10px] font-black px-3 py-1.5 bg-white/60 text-slate-600 rounded-xl uppercase tracking-widest border border-white shadow-sm">
+                                        {employee.employment_type || 'N/A'}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                Approved Leave
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                                Pending Leave
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                                Public Holiday
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-gray-300"></span>
-                                Weekly Off
+
+                            {/* Reporting Manager Card */}
+                            <div className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                                <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-purple-100/50 rounded-full blur-2xl"></div>
+                                <div className="flex justify-between items-start relative z-10">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                                            Reporting Manager
+                                        </p>
+                                        <h3 className="text-xl font-extrabold text-slate-800 mt-2">
+                                            {employee.reportingManager ? employee.reportingManager.name : 'Not Assigned'}
+                                        </h3>
+                                    </div>
+                                    <div className="p-3.5 bg-purple-500/10 rounded-2xl border border-purple-500/20 shadow-sm backdrop-blur-sm">
+                                        <Briefcase className="h-6 w-6 text-purple-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-6 text-xs font-bold text-slate-500 bg-white/50 backdrop-blur-md px-4 py-3 rounded-xl border border-white/60 shadow-sm relative z-10 break-all">
+                                    {employee.reportingManager ? employee.reportingManager.email : 'N/A'}
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Bottom Activity and Calendar Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        
+                        {/* Left: Recent Activity */}
+                        <div className="lg:col-span-2 rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                            <div className="relative z-10 h-full flex flex-col">
+                                <div className="border-b border-white/50 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                    <h2 className="text-xl font-extrabold text-slate-800">
+                                        My Recent Activity
+                                    </h2>
+                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50/80 border border-indigo-100 px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-sm">
+                                        ID: {employee.employee_id || 'N/A'}
+                                    </span>
+                                </div>
+
+                                <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
+                                    <div className="w-20 h-20 bg-slate-100/80 rounded-full flex items-center justify-center mb-6 shadow-inner border border-white">
+                                        <Calendar className="h-8 w-8 text-slate-400" />
+                                    </div>
+                                    <h4 className="font-extrabold text-lg text-slate-800 mb-2">
+                                        No recent tasks or requests
+                                    </h4>
+                                    <p className="text-sm text-slate-500 max-w-sm font-medium">
+                                        When you log requests, submit timesheets, or check leaves, they will elegantly appear right here.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right: Mini Calendar */}
+                        <div className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 flex flex-col relative overflow-hidden">
+                            <div className="relative z-10 flex flex-col h-full">
+                                <div className="border-b border-white/50 pb-5 mb-6 flex justify-between items-center">
+                                    <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                                        <Calendar className="h-5 w-5 text-indigo-600" />
+                                        Schedule
+                                    </h2>
+                                    <span className="text-[10px] font-black text-slate-600 bg-white/60 border border-white shadow-sm px-3 py-1.5 rounded-xl uppercase tracking-widest">
+                                        {monthNames[month]} {year}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1 text-center mb-3">
+                                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                                        <div key={idx} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            {day}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1.5 sm:gap-2 flex-1">
+                                    {renderMiniCalendarDays()}
+                                </div>
+
+                                {/* Legend */}
+                                <div className="mt-6 pt-5 border-t border-white/50 flex flex-wrap gap-x-6 gap-y-3 text-[11px] font-bold text-slate-500">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                                        Present
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                                        Weekly Off
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </AppLayout>

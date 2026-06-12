@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Clock, CalendarDays, Loader2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -85,10 +85,13 @@ export function ViewAttendanceModal({
             const isToday = dateStr === todayStr;
             const record = attendances.find(a => a.date.substring(0, 10) === dateStr);
             
-            let bgColor = 'bg-surface-1';
-            let textColor = 'text-text-primary';
+            let borderClass = 'border-transparent text-slate-600';
             let hoursLogged = 0;
             let needsRegularization = false;
+
+            const dateObj = new Date(year, month, day);
+            const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+            const isPast = dateObj < new Date(new Date().setHours(0,0,0,0));
 
             if (record) {
                 hoursLogged = record.total_logged_minutes / 60;
@@ -100,21 +103,22 @@ export function ViewAttendanceModal({
                 }
 
                 if (hoursLogged >= 8) {
-                    bgColor = 'bg-success-bg';
-                    textColor = 'text-success-text';
+                    borderClass = 'border-emerald-500 text-emerald-700';
                 } else if (hoursLogged > 0) {
-                    bgColor = 'bg-warning-bg';
-                    textColor = 'text-warning-text';
+                    borderClass = 'border-amber-500 text-amber-700';
+                } else if (isPast && !isWeekend) {
+                    borderClass = 'border-red-500 text-red-700';
                 }
+            } else if (isPast && !isWeekend) {
+                borderClass = 'border-red-500 text-red-700';
             }
 
             grid.push(
                 <div 
                     key={dateStr} 
-                    className={`group relative flex flex-col items-center justify-center p-3 rounded-xl border border-border shadow-xs transition-all cursor-pointer hover:ring-2 hover:ring-brand-500 hover:ring-opacity-50 ${bgColor} ${isToday ? 'ring-2 ring-brand-500' : ''}`}
+                    className={`group relative flex flex-col items-center justify-center aspect-square rounded-xl border-2 shadow-sm transition-all duration-200 cursor-pointer bg-white/40 hover:bg-white/60 ${borderClass} ${isToday ? 'ring-2 ring-indigo-400 ring-offset-1 ring-offset-transparent' : ''}`}
                     onClick={() => {
                         setSelectedDate(dateStr);
-                        // Pre-fill in_time if there's an open session
                         if (record && record.punch_history && record.punch_history.length > 0) {
                             const lastSession = record.punch_history[record.punch_history.length - 1];
                             if (lastSession.out === null) {
@@ -128,26 +132,23 @@ export function ViewAttendanceModal({
                         setIsRegularizeOpen(true);
                     }}
                 >
-                    <span className={`text-sm font-bold ${textColor}`}>{day}</span>
-                    {record && !needsRegularization && (
-                        <div className={`text-[10px] font-semibold mt-1 ${textColor}`}>
-                            {Math.floor(hoursLogged)}h {record.total_logged_minutes % 60}m
-                        </div>
-                    )}
+                    <span className={`text-sm font-bold`}>{day}</span>
+                    
                     {needsRegularization && (
-                        <div className="mt-1 text-[10px] px-2 py-0.5 rounded bg-danger-text text-white font-semibold w-full text-center">
-                            Open
+                        <div className="absolute bottom-1.5 right-1.5">
+                            <span className="block w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                         </div>
                     )}
+
                     {record?.is_regularized && (
-                        <div className="absolute top-1 right-1 text-brand-600 dark:text-accent-500" title="Regularized by HR">
-                            <CheckCircle className="h-3 w-3" />
+                        <div className="absolute top-1 right-1 text-indigo-500" title="Regularized by HR">
+                            <CheckCircle className="h-2.5 w-2.5" />
                         </div>
                     )}
                     
-                    {/* Hover indicator for regularization */}
-                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition-opacity pointer-events-none">
-                        <Clock className="h-6 w-6 text-brand-600 drop-shadow-md" />
+                    {/* Hover indicator */}
+                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 pointer-events-none">
+                        <Clock className="h-4 w-4 text-indigo-600 drop-shadow-md scale-75 group-hover:scale-100 transition-transform" />
                     </div>
                 </div>
             );
@@ -180,113 +181,138 @@ export function ViewAttendanceModal({
     return (
         <>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-3xl bg-surface-0 border-border p-0 overflow-hidden rounded-xl">
-                    <DialogHeader className="p-6 pb-4 border-b border-border bg-surface-1">
-                        <DialogTitle className="text-xl font-bold text-text-primary flex items-center justify-between">
-                            <span>Attendance: {employee?.name}</span>
-                            <div className="flex items-center gap-4 bg-surface-0 rounded-lg p-1 border border-border shadow-xs">
-                                <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-surface-2">
-                                    <ChevronLeft className="h-5 w-5" />
-                                </Button>
-                                <span className="font-semibold text-sm text-text-primary min-w-[120px] text-center">
-                                    {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                                </span>
-                                <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-surface-2">
-                                    <ChevronRight className="h-5 w-5" />
-                                </Button>
-                            </div>
-                        </DialogTitle>
-                    </DialogHeader>
+                <DialogContent className="sm:max-w-2xl bg-slate-50/90 backdrop-blur-3xl border-white/80 p-0 overflow-hidden rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)]">
+                    
+                    {/* Decorative Background Blob */}
+                    <div className="absolute -top-20 -right-20 w-48 h-48 bg-indigo-300/40 rounded-full blur-[60px] pointer-events-none mix-blend-multiply"></div>
 
-                    <div className="p-6">
-                        {loading ? (
-                            <div className="h-64 flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-                            </div>
-                        ) : (
-                            <div>
-                                <div className="grid grid-cols-7 gap-2 mb-2">
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                        <div key={day} className="text-center text-xs font-bold text-text-muted uppercase tracking-wider py-2">
-                                            {day}
+                    <div className="relative z-10">
+                        {/* Header */}
+                        <DialogHeader className="p-5 pb-3 border-b border-white/50 bg-white/40">
+                            <DialogTitle className="text-lg font-extrabold text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 bg-indigo-100/80 rounded-lg backdrop-blur-sm border border-indigo-200/50">
+                                        <CalendarDays className="h-4 w-4 text-indigo-600" />
+                                    </div>
+                                    <span className="truncate max-w-[200px] sm:max-w-xs">{employee?.name}</span>
+                                </div>
+
+                                <div className="flex items-center gap-2 bg-white/60 backdrop-blur-md rounded-xl p-1 border border-white shadow-sm w-fit">
+                                    <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg">
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="font-bold text-xs text-slate-800 min-w-[100px] text-center uppercase tracking-widest">
+                                        {currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                    </span>
+                                    <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg">
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        {/* Calendar Body */}
+                        <div className="p-5">
+                            {loading ? (
+                                <div className="h-56 flex items-center justify-center">
+                                    <Loader2 className="animate-spin h-6 w-6 text-indigo-600" />
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="grid grid-cols-7 gap-1.5 mb-2">
+                                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                            <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest py-1">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-7 gap-1.5">
+                                        {renderCalendar()}
+                                    </div>
+                                    
+                                    {/* Legend */}
+                                    <div className="mt-5 flex flex-wrap items-center justify-between sm:justify-start gap-x-4 gap-y-2 pt-4 border-t border-white/50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 rounded-full border-2 border-emerald-500 bg-white/40"></div>
+                                            <span>Present</span>
                                         </div>
-                                    ))}
-                                </div>
-                                <div className="grid grid-cols-7 gap-2">
-                                    {renderCalendar()}
-                                </div>
-                                
-                                <div className="mt-6 flex items-center gap-6 pt-4 border-t border-border text-xs font-semibold">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-success-bg border border-success-text/20"></div>
-                                        <span className="text-text-secondary">Full Day (8h+)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-warning-bg border border-warning-text/20"></div>
-                                        <span className="text-text-secondary">Partial Day</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-surface-1 border border-border"></div>
-                                        <span className="text-text-secondary">No Data / Absent</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 ml-auto text-text-muted">
-                                        <CheckCircle className="h-3 w-3 text-brand-600 dark:text-accent-500" />
-                                        <span>Regularized</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 rounded-full border-2 border-amber-500 bg-white/40"></div>
+                                            <span>Late / Partial</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 rounded-full border-2 border-red-500 bg-white/40"></div>
+                                            <span>Absent</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 sm:ml-auto">
+                                            <CheckCircle className="h-3.5 w-3.5 text-indigo-500" />
+                                            <span>Regularized</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
+            {/* Regularization Modal */}
             <Dialog open={isRegularizeOpen} onOpenChange={setIsRegularizeOpen}>
-                <DialogContent className="sm:max-w-sm bg-surface-0 border-border p-6 shadow-xl rounded-xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-lg font-bold text-text-primary flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-brand-600 dark:text-accent-500" /> Regularize Attendance
+                <DialogContent className="sm:max-w-sm bg-slate-50/95 backdrop-blur-2xl border-white/80 p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] rounded-3xl overflow-hidden">
+                    <DialogHeader className="p-5 pb-3 border-b border-white/50 bg-white/40">
+                        <DialogTitle className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-indigo-600" /> Regularize Attendance
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleRegularize} className="space-y-4 mt-4">
-                        <div className="space-y-2">
-                            <Label className="text-text-secondary text-xs uppercase font-bold tracking-wider">Date</Label>
-                            <div className="text-sm font-semibold text-text-primary bg-surface-1 p-2 rounded border border-border">
-                                {selectedDate}
+                    
+                    <form onSubmit={handleRegularize} className="flex flex-col">
+                        <div className="p-5 space-y-4">
+                            {/* Date Display */}
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</Label>
+                                <div className="text-sm font-bold text-slate-700 bg-white/60 p-2.5 rounded-xl border border-white/80 shadow-sm flex items-center gap-2">
+                                    <CalendarDays className="h-4 w-4 text-slate-400" />
+                                    {selectedDate}
+                                </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="in_time" className="text-text-secondary text-xs uppercase font-bold tracking-wider">Punch In Time</Label>
-                                <Input
-                                    id="in_time"
-                                    type="time"
-                                    value={inTime}
-                                    onChange={(e) => setInTime(e.target.value)}
-                                    className="bg-surface-0 border-border text-text-primary focus:border-brand-500"
-                                    required
-                                />
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="in_time" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Punch In Time</Label>
+                                    <Input
+                                        id="in_time"
+                                        type="time"
+                                        value={inTime}
+                                        onChange={(e) => setInTime(e.target.value)}
+                                        className="h-10 border-white/80 bg-white/60 text-slate-800 focus:border-indigo-400 focus:ring-indigo-500/20 rounded-xl font-medium shadow-sm"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="out_time" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Punch Out Time</Label>
+                                    <Input
+                                        id="out_time"
+                                        type="time"
+                                        value={outTime}
+                                        onChange={(e) => setOutTime(e.target.value)}
+                                        className="h-10 border-white/80 bg-white/60 text-slate-800 focus:border-indigo-400 focus:ring-indigo-500/20 rounded-xl font-medium shadow-sm"
+                                        required
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="out_time" className="text-text-secondary text-xs uppercase font-bold tracking-wider">Punch Out Time</Label>
-                                <Input
-                                    id="out_time"
-                                    type="time"
-                                    value={outTime}
-                                    onChange={(e) => setOutTime(e.target.value)}
-                                    className="bg-surface-0 border-border text-text-primary focus:border-brand-500"
-                                    required
-                                />
-                            </div>
+                            
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mt-1">
+                                Max 2 regularizations/month
+                            </p>
                         </div>
-                        <div>
-                            <p className="text-xs text-text-muted mt-2">Maximum 2 regularizations allowed per month.</p>
-                        </div>
-                        <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                            <Button type="button" variant="ghost" onClick={() => setIsRegularizeOpen(false)} className="text-text-secondary hover:text-text-primary hover:bg-surface-1">
+                        
+                        <div className="flex justify-end gap-2 p-4 border-t border-white/50 bg-white/40">
+                            <Button type="button" variant="outline" onClick={() => setIsRegularizeOpen(false)} className="text-slate-600 bg-white/60 border-white/80 hover:bg-white h-9 rounded-xl text-xs font-bold transition-all shadow-sm">
                                 Cancel
                             </Button>
-                            <Button type="submit" className="bg-brand-600 hover:bg-brand-400 text-white shadow-xs font-semibold">
-                                Confirm Regularization
+                            <Button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white h-9 rounded-xl text-xs font-bold transition-all shadow-md shadow-slate-800/20">
+                                Confirm
                             </Button>
                         </div>
                     </form>

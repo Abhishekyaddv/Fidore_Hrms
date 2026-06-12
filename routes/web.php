@@ -12,8 +12,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         $user = request()->user();
         if ($user->hasAdminAccess()) {
-            // Fetch designations for the dropdown
-            $designations = \App\Models\Designation::all();
 
             // Calculate next sequential employee ID
             $lastSeq = \App\Models\User::whereNotNull('employee_id')
@@ -34,22 +32,12 @@ Route::middleware(['auth'])->group(function () {
 
             $totalEmployees = \App\Models\User::where('role', '!=', 'superadmin')->count();
             $newEmployeesThisMonth = \App\Models\User::where('role', '!=', 'superadmin')->where('created_at', '>=', now()->startOfMonth())->count();
-            $pendingLeaves = \App\Models\LeaveRequest::whereHas('user', function ($q) {
-                $q->where('role', '!=', 'superadmin');
-            })->where('status', 'pending')->count();
 
             // Today's attendance stats
             $presentCount = \App\Models\Attendance::whereHas('user', function ($q) {
                 $q->where('role', '!=', 'superadmin');
             })->where('date', now()->toDateString())
                 ->whereNotNull('punch_in')
-                ->count();
-
-            $leaveCount = \App\Models\LeaveRequest::whereHas('user', function ($q) {
-                $q->where('role', '!=', 'superadmin');
-            })->where('status', 'approved')
-                ->whereDate('start_date', '<=', now()->toDateString())
-                ->whereDate('end_date', '>=', now()->toDateString())
                 ->count();
 
             $attendancesToday = \App\Models\Attendance::whereHas('user', function ($q) {
@@ -61,35 +49,29 @@ Route::middleware(['auth'])->group(function () {
                 return $att->punch_in ? $att->punch_in->format('H:i:s') > '09:30:00' : false;
             })->count();
 
-            $absentCount = max(0, $totalEmployees - $presentCount - $leaveCount);
+            $absentCount = max(0, $totalEmployees - $presentCount);
             $presentPercentage = $totalEmployees > 0 ? round(($presentCount / $totalEmployees) * 100) : 0;
 
-            $recentLeaveRequests = \App\Models\LeaveRequest::with(['user.designation'])
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
+            $officeLocation = \App\Models\OfficeLocation::first();
 
             return Inertia::render('Admin/Dashboard', [
-                'designations' => $designations,
                 'nextEmployeeId' => $nextEmployeeId,
-                'employees' => \App\Models\User::whereIn('role', ['employee', 'hr', 'superadmin'])->with('designation')->get(),
+                'employees' => \App\Models\User::whereIn('role', ['employee', 'hr', 'superadmin'])->get(),
                 'todayAttendance' => $todayAttendance,
                 'latestLocation' => $latestLocation,
+                'officeLocation' => $officeLocation,
                 'stats' => [
                     'totalEmployees' => $totalEmployees,
                     'newEmployeesThisMonth' => $newEmployeesThisMonth,
-                    'pendingLeaves' => $pendingLeaves,
                     'presentCount' => $presentCount,
-                    'leaveCount' => $leaveCount,
                     'lateCount' => $lateCount,
                     'absentCount' => $absentCount,
                     'presentPercentage' => $presentPercentage,
                 ],
-                'recentLeaveRequests' => $recentLeaveRequests,
             ]);
         }
 
-        $user->load(['designation', 'reportingManager']);
+        $user->load(['reportingManager']);
         $todayAttendance = \App\Models\Attendance::where('user_id', $user->id)
             ->where('date', now()->toDateString())
             ->first();
@@ -103,53 +85,26 @@ Route::middleware(['auth'])->group(function () {
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->get();
 
-        $holidays = \App\Models\Holiday::getHolidaysInRange($startOfMonth, $endOfMonth);
-
-        $leaveRequests = \App\Models\LeaveRequest::where('user_id', $user->id)
-            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
-                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
-                    ->orWhere(function ($q) use ($startOfMonth, $endOfMonth) {
-                        $q->where('start_date', '<=', $startOfMonth)
-                          ->where('end_date', '>=', $endOfMonth);
-                    });
-            })->get();
+        $officeLocation = \App\Models\OfficeLocation::first();
 
         return Inertia::render('Employee/Dashboard', [
             'employee' => $user,
             'todayAttendance' => $todayAttendance,
             'latestLocation' => $latestLocation,
+            'officeLocation' => $officeLocation,
             'monthAttendances' => $monthAttendances,
-            'holidays' => $holidays,
-            'leaveRequests' => $leaveRequests,
         ]);
     })->name('dashboard')->middleware(\App\Http\Middleware\CheckBearerToken::class);
 
     Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\CheckBearerToken::class)->group(function () {
 
-        Route::resource('designations', \App\Http\Controllers\Admin\DesignationController::class);
         Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
         
         Route::post('employees/{id}/regularize', [\App\Http\Controllers\Admin\EmployeeController::class, 'regularizeAttendance'])->name('employees.regularize');
         Route::get('employees/{id}/attendance', [\App\Http\Controllers\Admin\EmployeeController::class, 'getAttendanceCalendar'])->name('employees.attendance');
         
-        // Admin Leave Management
-        Route::get('leaves', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'index'])->name('leaves.index');
-        Route::post('leaves/holidays', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storeHoliday'])->name('leaves.holidays.store');
-        Route::delete('leaves/holidays/{holiday}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'destroyHoliday'])->name('leaves.holidays.destroy');
-        Route::post('leaves/policies', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'storePolicy'])->name('leaves.policies.store');
-
-        Route::patch('leaves/requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveManagementController::class, 'updateRequestStatus'])->name('leaves.requests.update');
+        Route::post('office-location', [\App\Http\Controllers\Admin\OfficeLocationController::class, 'store'])->name('office-location.store');
     });
-
-    // Employee My Leaves
-    Route::get('my-leaves', [\App\Http\Controllers\Employee\MyLeavesController::class, 'index'])->name('my-leaves.index')->middleware(\App\Http\Middleware\CheckBearerToken::class);
-    Route::post('my-leaves', [\App\Http\Controllers\Employee\MyLeavesController::class, 'store'])->name('my-leaves.store')->middleware(\App\Http\Middleware\CheckBearerToken::class);
-    Route::delete('my-leaves/{leaveRequest}', [\App\Http\Controllers\Employee\MyLeavesController::class, 'destroy'])->name('my-leaves.destroy')->middleware(\App\Http\Middleware\CheckBearerToken::class);
-
-    // Company Policies
-    Route::resource('company-policies', \App\Http\Controllers\CompanyPolicyController::class)->only(['index', 'store', 'update', 'destroy'])->middleware(\App\Http\Middleware\CheckBearerToken::class);
-    Route::get('company-policies/{companyPolicy}/download', [\App\Http\Controllers\CompanyPolicyController::class, 'download'])->name('company-policies.download')->middleware(\App\Http\Middleware\CheckBearerToken::class);
 
     // Attendance
     Route::post('attendance/punch-in', [\App\Http\Controllers\Employee\AttendanceController::class, 'punchIn'])->name('attendance.punch-in')->middleware(\App\Http\Middleware\CheckBearerToken::class);

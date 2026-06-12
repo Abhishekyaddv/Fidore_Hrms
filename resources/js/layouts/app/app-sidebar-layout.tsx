@@ -1,17 +1,17 @@
-import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
-import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { BottomNavbar } from '@/components/bottom-navbar';
 import { type BreadcrumbItem } from '@/types';
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: { children: React.ReactNode; breadcrumbs?: BreadcrumbItem[] }) {
     return (
-        <AppShell variant="sidebar">
-            <AppSidebar />
-            <AppContent variant="sidebar">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} />
+        <AppShell>
+            {/* The main content area with padding at the bottom to avoid overlapping the bottom navbar */}
+            <main className="flex-1 pb-24 sm:pb-28 w-full max-w-full overflow-x-hidden">
                 {children}
-            </AppContent>
+            </main>
+            
+            {/* The new floating bottom navbar */}
+            <BottomNavbar />
         </AppShell>
     );
 }
