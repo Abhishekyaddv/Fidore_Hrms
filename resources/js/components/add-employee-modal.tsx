@@ -22,6 +22,7 @@ import {
     Info,
     KeyRound,
     User,
+    Loader2,
 } from 'lucide-react';
 import React, { useEffect } from 'react';
 
@@ -133,8 +134,8 @@ export function AddEmployeeModal({
             }
         }
 
-        // Validate password if provided, or if it's a new employee (required)
-        if (data.password || !isEditMode) {
+        // Validate password if provided in edit mode
+        if (data.password && isEditMode) {
             const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
             if (!passwordRegex.test(data.password)) {
                 setError('password', 'Password must be at least 8 characters long, contain an uppercase letter, a number, and a special character.');
@@ -217,6 +218,7 @@ export function AddEmployeeModal({
                                     value={data.dob}
                                     onChange={(e) => setData('dob', e.target.value)}
                                     className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                    required
                                 />
                                 {errors.dob && (
                                     <p className="text-xs font-medium text-danger-text">{errors.dob}</p>
@@ -410,23 +412,24 @@ export function AddEmployeeModal({
                             </div>
 
                             {/* Password */}
-                            <div className="space-y-1.5">
-                                <Label htmlFor="password" className="text-xs font-semibold text-text-secondary">
-                                    Password
-                                </Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={data.password}
-                                    onChange={(e) => setData('password', e.target.value)}
-                                    placeholder={isEditMode ? "Leave blank to keep current" : "••••••••"}
-                                    className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
-                                    required={!isEditMode}
-                                />
-                                {errors.password && (
-                                    <p className="text-xs font-medium text-danger-text">{errors.password}</p>
-                                )}
-                            </div>
+                            {isEditMode && (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="password" className="text-xs font-semibold text-text-secondary">
+                                        Password
+                                    </Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={data.password}
+                                        onChange={(e) => setData('password', e.target.value)}
+                                        placeholder="Leave blank to keep current"
+                                        className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                    />
+                                    {errors.password && (
+                                        <p className="text-xs font-medium text-danger-text">{errors.password}</p>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Reporting Manager */}
                             <div className="space-y-1.5">
@@ -463,7 +466,9 @@ export function AddEmployeeModal({
                         <div className="p-3 bg-info-bg border border-border rounded-lg flex gap-2.5">
                             <Info className="h-5 w-5 text-info-text shrink-0 mt-0.5" />
                             <p className="text-xs text-info-text leading-normal">
-                                Note: Saving this form will instantly build the new profile. The user can log in immediately.
+                                {isEditMode 
+                                    ? "Note: Updating this profile will instantly apply the changes."
+                                    : "Note: Saving this form will instantly build the new profile. The user can log in immediately with an auto-generated password sent to their email."}
                             </p>
                         </div>
                     </div>
@@ -570,6 +575,7 @@ export function AddEmployeeModal({
                             disabled={processing}
                             className="bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-10 px-5 rounded-lg shadow-sm border-none"
                         >
+                            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isEditMode ? 'Update Profile' : 'Save Employee Profile'}
                         </Button>
                     </DialogFooter>

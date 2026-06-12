@@ -15,6 +15,7 @@ class UserLocation extends Model
         'latitude',
         'longitude',
         'type',
+        'address',
     ];
 
     public function user()

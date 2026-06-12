@@ -23,13 +23,14 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             <SidebarMenuButton 
                                 asChild 
                                 isActive={false}
-                                className={`relative z-10 w-full h-10 px-4 flex items-center gap-3 transition-colors duration-200 rounded-full hover:bg-transparent! ${
+                                tooltip={item.title}
+                                className={`relative z-10 w-full h-10 px-4 group-data-[collapsible=icon]:px-0 flex items-center justify-start group-data-[collapsible=icon]:justify-center transition-colors duration-200 rounded-full hover:bg-transparent! ${
                                     isActive ? 'text-white' : 'text-[#0a316cf0] hover:text-[#0a316cf0]'
                                 }`}
                             >
-                                <Link href={item.url} prefetch className="flex items-center gap-3 w-full outline-none">
-                                    {item.icon && <item.icon className="w-4 h-4 shrink-0" />}
-                                    <span className="font-medium text-[13px]">{item.title}</span>
+                                <Link href={item.url} prefetch className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0 w-full group-data-[collapsible=icon]:w-auto outline-none">
+                                    {item.icon && <item.icon className="w-5 h-5 shrink-0" />}
+                                    <span className="font-medium text-[13px] group-data-[collapsible=icon]:hidden">{item.title}</span>
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

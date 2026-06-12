@@ -30,6 +30,8 @@ Route::middleware(['auth'])->group(function () {
                 ->where('date', now()->toDateString())
                 ->first();
 
+            $latestLocation = \App\Models\UserLocation::where('user_id', $user->id)->latest()->first();
+
             $totalEmployees = \App\Models\User::where('role', '!=', 'superadmin')->count();
             $newEmployeesThisMonth = \App\Models\User::where('role', '!=', 'superadmin')->where('created_at', '>=', now()->startOfMonth())->count();
             $pendingLeaves = \App\Models\LeaveRequest::whereHas('user', function ($q) {
@@ -72,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
                 'nextEmployeeId' => $nextEmployeeId,
                 'employees' => \App\Models\User::whereIn('role', ['employee', 'hr', 'superadmin'])->with('designation')->get(),
                 'todayAttendance' => $todayAttendance,
+                'latestLocation' => $latestLocation,
                 'stats' => [
                     'totalEmployees' => $totalEmployees,
                     'newEmployeesThisMonth' => $newEmployeesThisMonth,
@@ -90,6 +93,8 @@ Route::middleware(['auth'])->group(function () {
         $todayAttendance = \App\Models\Attendance::where('user_id', $user->id)
             ->where('date', now()->toDateString())
             ->first();
+
+        $latestLocation = \App\Models\UserLocation::where('user_id', $user->id)->latest()->first();
 
         $startOfMonth = now()->startOfMonth()->toDateString();
         $endOfMonth = now()->endOfMonth()->toDateString();
@@ -113,6 +118,7 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Employee/Dashboard', [
             'employee' => $user,
             'todayAttendance' => $todayAttendance,
+            'latestLocation' => $latestLocation,
             'monthAttendances' => $monthAttendances,
             'holidays' => $holidays,
             'leaveRequests' => $leaveRequests,
@@ -152,6 +158,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::post('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update_info');
     Route::post('profile/avatar', [\App\Http\Controllers\ProfileController::class, 'updateAvatar'])->name('profile.update_avatar');
+    Route::post('profile/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.update_password');
 });
 
 

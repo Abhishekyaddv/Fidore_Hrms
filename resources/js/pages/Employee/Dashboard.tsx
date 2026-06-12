@@ -8,6 +8,7 @@ import {
     CheckCircle,
     Clock,
     MapPin,
+    Loader2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
@@ -71,6 +72,13 @@ interface DashboardProps {
     monthAttendances?: Attendance[];
     holidays?: Holiday[];
     leaveRequests?: LeaveRequest[];
+    latestLocation?: {
+        id: number;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        type: string;
+    } | null;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -86,11 +94,13 @@ export default function Dashboard({
     monthAttendances = [],
     holidays = [],
     leaveRequests = [],
+    latestLocation = null,
 }: DashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
     const [preFetchedLocation, setPreFetchedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [isPunching, setIsPunching] = useState(false);
 
     // Update real-time clock
     useEffect(() => {
@@ -161,10 +171,12 @@ export default function Dashboard({
     };
 
     const handlePunch = () => {
+        setIsPunching(true);
         if (!isPunchedIn()) {
             if (preFetchedLocation) {
                 router.post(route('attendance.punch-in'), preFetchedLocation, {
                     preserveScroll: true,
+                    onFinish: () => setIsPunching(false)
                 });
             } else if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -172,36 +184,66 @@ export default function Dashboard({
                         const { latitude, longitude } = position.coords;
                         router.post(route('attendance.punch-in'), { latitude, longitude }, {
                             preserveScroll: true,
+                            onFinish: () => setIsPunching(false)
                         });
                     },
                     (error) => {
+                        setIsPunching(false);
                         alert('Location access is required to punch in. Please allow location access and try again.');
                     }
                 );
             } else {
+                setIsPunching(false);
                 alert('Geolocation is not supported by your browser.');
             }
         } else {
-            router.post(route('attendance.punch-out'), {}, {
-                preserveScroll: true,
-            });
+            if (preFetchedLocation) {
+                router.post(route('attendance.punch-out'), preFetchedLocation, {
+                    preserveScroll: true,
+                    onFinish: () => setIsPunching(false)
+                });
+            } else if (navigator.geolocation) {
+                 navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        router.post(route('attendance.punch-out'), { latitude, longitude }, {
+                            preserveScroll: true,
+                            onFinish: () => setIsPunching(false)
+                        });
+                    },
+                    (error) => {
+                        // Even if error, we punch out without location
+                        router.post(route('attendance.punch-out'), {}, {
+                            preserveScroll: true,
+                            onFinish: () => setIsPunching(false)
+                        });
+                    }
+                );
+            } else {
+                router.post(route('attendance.punch-out'), {}, {
+                    preserveScroll: true,
+                    onFinish: () => setIsPunching(false)
+                });
+            }
         }
     };
 
     const getPunchButtonState = () => {
         if (!isPunchedIn()) {
             return {
-                text: 'PUNCH IN',
-                disabled: false,
-                className: 'w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
-                icon: <MapPin className="h-4 w-4" />
+                text: isPunching ? 'PUNCHING IN...' : 'PUNCH IN',
+                disabled: isPunching,
+                className: 'w-full sm:w-auto bg-brand-600 hover:bg-brand-400 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none disabled:opacity-70 disabled:cursor-not-allowed group relative',
+                icon: isPunching ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />,
+                tooltip: latestLocation?.address ? `Last punched out from: ${latestLocation.address}` : 'Ready to punch in'
             };
         }
         return {
-            text: 'PUNCH OUT',
-            disabled: false,
-            className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none',
-            icon: <Clock className="h-4 w-4" />
+            text: isPunching ? 'PUNCHING OUT...' : 'PUNCH OUT',
+            disabled: isPunching,
+            className: 'w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-surface-0 font-semibold cursor-pointer h-12 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all border-none disabled:opacity-70 disabled:cursor-not-allowed group relative',
+            icon: isPunching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />,
+            tooltip: latestLocation?.address ? `Punched in from: ${latestLocation.address}` : 'Punched in'
         };
     };
 
@@ -365,13 +407,21 @@ export default function Dashboard({
                                 </div>
                             )}
 
-                            <button
-                                onClick={handlePunch}
-                                disabled={buttonState.disabled}
-                                className={buttonState.className}
-                            >
-                                {buttonState.icon} {buttonState.text}
-                            </button>
+                            <div className="relative group/tooltip inline-block w-full sm:w-auto">
+                                <button
+                                    onClick={handlePunch}
+                                    disabled={buttonState.disabled}
+                                    className={buttonState.className}
+                                >
+                                    {buttonState.icon} {buttonState.text}
+                                </button>
+                                
+                                {/* Tooltip */}
+                                <div className="absolute z-10 invisible group-hover/tooltip:visible opacity-0 group-hover/tooltip:opacity-100 transition duration-300 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-sm tooltip dark:bg-gray-700 whitespace-nowrap pointer-events-none">
+                                    {buttonState.tooltip}
+                                    <div className="tooltip-arrow" data-popper-arrow></div>
+                                </div>
+                            </div>
                         </div>
                         <div className="hidden sm:block w-1/3 bg-surface-2 relative border-l border-border">
                             <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMzl2MWg0MHYtMXpNMCBwaDF2NDBIMHoiIGZpbGw9IiNjdXJyZW50Q29sb3IiLz4KPC9zdmc+')] mix-blend-multiply dark:mix-blend-overlay"></div>

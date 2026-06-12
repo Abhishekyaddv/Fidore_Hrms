@@ -32,7 +32,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                 const requestedDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
                 const balance = balances[data.type];
                 if (balance) {
-                    const available = Math.max(0, balance.total - balance.used);
+                    const available = balance.available;
                     if (requestedDays > available) {
                         const message = `You requested ${requestedDays} days, but only have ${available} ${data.type} leaves remaining.`;
                         try {
@@ -278,7 +278,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                 </div>
 
                 {/* Balances */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                             <Clock className="h-6 w-6" />
@@ -286,7 +286,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                         <div>
                             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Casual Leaves</p>
                             <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-black text-[#051C3F]">{balances.CL.total - balances.CL.used}</span>
+                                <span className="text-2xl font-black text-[#051C3F]">{balances.CL.available}</span>
                                 <span className="text-sm font-medium text-gray-400">/ {balances.CL.total} Remaining</span>
                             </div>
                         </div>
@@ -298,7 +298,7 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                         <div>
                             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Sick Leaves</p>
                             <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-black text-[#051C3F]">{balances.SL.total - balances.SL.used}</span>
+                                <span className="text-2xl font-black text-[#051C3F]">{balances.SL.available}</span>
                                 <span className="text-sm font-medium text-gray-400">/ {balances.SL.total} Remaining</span>
                             </div>
                         </div>
@@ -310,8 +310,20 @@ export default function MyLeaves({ balances, upcomingHolidays, holidays, leaveRe
                         <div>
                             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Earned Leaves</p>
                             <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-black text-[#051C3F]">{balances.EL.total - balances.EL.used}</span>
+                                <span className="text-2xl font-black text-[#051C3F]">{balances.EL.available}</span>
                                 <span className="text-sm font-medium text-gray-400">/ {balances.EL.total} Remaining</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+                            <AlertCircle className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Leave w/o Pay</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <span className="text-2xl font-black text-[#051C3F]">{balances.LWP?.used || 0}</span>
+                                <span className="text-sm font-medium text-gray-400">Days Taken</span>
                             </div>
                         </div>
                     </div>

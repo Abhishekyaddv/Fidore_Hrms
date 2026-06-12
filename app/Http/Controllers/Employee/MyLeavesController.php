@@ -17,38 +17,96 @@ class MyLeavesController extends Controller
     {
         $currentYear = date('Y');
         
-        if ($user->custom_leave_year == $currentYear) {
-            $cl_total = $user->custom_cl ?? 0;
-            $sl_total = $user->custom_sl ?? 0;
-            $el_total = $user->custom_el ?? 0;
+        $policy = LeavePolicy::where('employment_type', $user->employment_type ?? 'Full-time')->first();
+        
+        if ($user->custom_leave_year == $currentYear && ($user->custom_cl !== null || $user->custom_sl !== null || $user->custom_el !== null)) {
+            $cl_total = $user->custom_cl ?? ($policy ? $policy->cl : 0);
+            $sl_total = $user->custom_sl ?? ($policy ? $policy->sl : 0);
+            $el_total = $user->custom_el ?? ($policy ? $policy->el : 0);
         } else {
-            $policy = LeavePolicy::where('employment_type', $user->employment_type ?? 'Full-time')->first();
             $cl_total = $policy ? $policy->cl : 0;
             $sl_total = $policy ? $policy->sl : 0;
             $el_total = $policy ? $policy->el : 0;
         }
         
+        $currentMonth = (int) date('m');
+        $cl_monthly = $cl_total / 12;
+        $sl_monthly = $sl_total / 12;
+        $el_monthly = $el_total / 12;
+        
         $usedCL = 0;
         $usedSL = 0;
         $usedEL = 0;
+        $usedLWP = 0;
+        
+        $clUsageByMonth = array_fill(1, 12, 0);
+        $slUsageByMonth = array_fill(1, 12, 0);
 
         foreach ($user->leaveRequests as $req) {
-            // Count approved and pending requests against the limit
-            if ($req->status !== 'rejected' && substr($req->start_date, 0, 4) == $currentYear) {
+            if ($req->status !== 'rejected') {
                 $start = Carbon::parse($req->start_date);
                 $end = Carbon::parse($req->end_date);
                 $days = $start->diffInDays($end) + 1; 
 
-                if ($req->type === 'CL') $usedCL += $days;
-                if ($req->type === 'SL') $usedSL += $days;
-                if ($req->type === 'EL') $usedEL += $days;
+                if (substr($req->start_date, 0, 4) == $currentYear) {
+                    $month = (int) $start->format('m');
+                    if ($req->type === 'CL') {
+                        $usedCL += $days;
+                        $clUsageByMonth[$month] += $days;
+                    }
+                    if ($req->type === 'SL') {
+                        $usedSL += $days;
+                        $slUsageByMonth[$month] += $days;
+                    }
+                    if ($req->type === 'EL') $usedEL += $days;
+                    if ($req->type === 'LWP') $usedLWP += $days;
+                }
             }
         }
+        
+        $lapsedCL = 0;
+        $lapsedSL = 0;
+        for ($m = 1; $m < $currentMonth; $m++) {
+            $lapsedCL += max(0, $cl_monthly - $clUsageByMonth[$m]);
+            $lapsedSL += max(0, $sl_monthly - $slUsageByMonth[$m]);
+        }
+        
+        $availableCL = max(0, $cl_total - $lapsedCL - $usedCL);
+        $availableSL = max(0, $sl_total - $lapsedSL - $usedSL);
+        
+        // Dynamically calculate carry-forward EL from joining date to last year
+        $carriedEL = 0;
+        if ($user->joining_date) {
+            $joinYear = (int) Carbon::parse($user->joining_date)->format('Y');
+            $joinMonth = (int) Carbon::parse($user->joining_date)->format('m');
+            $currentYearInt = (int) $currentYear;
+            
+            for ($y = $joinYear; $y < $currentYearInt; $y++) {
+                $monthsInYear = ($y === $joinYear) ? (12 - $joinMonth + 1) : 12;
+                $accruedThatYear = $el_monthly * $monthsInYear;
+                
+                $takenThatYear = 0;
+                foreach ($user->leaveRequests as $req) {
+                    if ($req->status !== 'rejected' && substr($req->start_date, 0, 4) == $y && $req->type === 'EL') {
+                        $start = Carbon::parse($req->start_date);
+                        $end = Carbon::parse($req->end_date);
+                        $takenThatYear += ($start->diffInDays($end) + 1);
+                    }
+                }
+                
+                $carriedEL += max(0, $accruedThatYear - $takenThatYear);
+            }
+        }
+        
+        // Current year accrued EL up to current month
+        $currentYearAccruedEL = $el_monthly * $currentMonth;
+        $availableEL = max(0, $currentYearAccruedEL + $carriedEL - $usedEL);
 
         return [
-            'CL' => ['total' => $cl_total, 'used' => $usedCL],
-            'SL' => ['total' => $sl_total, 'used' => $usedSL],
-            'EL' => ['total' => $el_total, 'used' => $usedEL],
+            'CL' => ['total' => $cl_total, 'used' => $usedCL, 'lapsed' => floor($lapsedCL), 'available' => floor($availableCL)],
+            'SL' => ['total' => $sl_total, 'used' => $usedSL, 'lapsed' => floor($lapsedSL), 'available' => floor($availableSL)],
+            'EL' => ['total' => floor($currentYearAccruedEL + $carriedEL), 'used' => $usedEL, 'carried' => floor($carriedEL), 'available' => floor($availableEL)],
+            'LWP' => ['total' => 0, 'used' => $usedLWP, 'available' => 999],
         ];
     }
 
@@ -139,11 +197,10 @@ class MyLeavesController extends Controller
                 $end = Carbon::parse($validated['end_date']);
                 $requestedDays = $start->diffInDays($end) + 1;
                 
-                $totalAvailable = $balances[$leaveType]['total'];
-                $alreadyUsed = $balances[$leaveType]['used'];
+                $available = $balances[$leaveType]['available'];
                 
-                if (($alreadyUsed + $requestedDays) > $totalAvailable) {
-                    return back()->withErrors(['type' => "You do not have enough $leaveType balance. (Requested: $requestedDays, Available: " . max(0, $totalAvailable - $alreadyUsed) . ")"]);
+                if ($requestedDays > $available) {
+                    return back()->withErrors(['type' => "You do not have enough $leaveType balance. (Requested: $requestedDays, Available: $available)"]);
                 }
             }
         }
@@ -158,7 +215,7 @@ class MyLeavesController extends Controller
         // Notify HR users
         $hrUsers = \App\Models\User::where('role', 'hr')->get();
         foreach ($hrUsers as $hrUser) {
-            \Illuminate\Support\Facades\Mail::to($hrUser->email)->send(new \App\Mail\LeaveRequested($leaveRequest));
+            \Illuminate\Support\Facades\Mail::to($hrUser->email)->queue(new \App\Mail\LeaveRequested($leaveRequest));
         }
 
         return redirect()->back()->with('success', 'Leave request submitted successfully.');

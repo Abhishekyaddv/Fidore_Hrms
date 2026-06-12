@@ -46,13 +46,14 @@ class AttendanceController extends Controller
         $attendance->update($updateData);
 
         if ($request->filled('latitude') && $request->filled('longitude')) {
-            UserLocation::create([
+            $userLocation = UserLocation::create([
                 'user_id' => $user->id,
                 'attendance_id' => $attendance->id,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'type' => 'punch_in',
             ]);
+            \App\Jobs\FetchLocationAddress::dispatch($userLocation);
         }
 
         return back()->with('success', 'Punched in successfully.');
@@ -60,6 +61,11 @@ class AttendanceController extends Controller
 
     public function punchOut(Request $request)
     {
+        $request->validate([
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
         $user = $request->user();
         $today = now()->toDateString();
 
@@ -94,6 +100,17 @@ class AttendanceController extends Controller
             'punch_history' => $history,
             'total_logged_minutes' => $totalMinutes,
         ]);
+
+        if ($request->filled('latitude') && $request->filled('longitude')) {
+            $userLocation = UserLocation::create([
+                'user_id' => $user->id,
+                'attendance_id' => $attendance->id,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'type' => 'punch_out',
+            ]);
+            \App\Jobs\FetchLocationAddress::dispatch($userLocation);
+        }
 
         return back()->with('success', 'Punched out successfully.');
     }

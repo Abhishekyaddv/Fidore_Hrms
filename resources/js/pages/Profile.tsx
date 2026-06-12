@@ -84,6 +84,31 @@ export default function Profile({ user, manager }: ProfileProps) {
         });
     };
 
+    // Password update form
+    const { 
+        data: passwordData, 
+        setData: setPasswordData, 
+        post: postPassword, 
+        processing: passwordProcessing, 
+        errors: passwordErrors,
+        reset: resetPassword
+    } = useForm({
+        current_password: '',
+        new_password: '',
+        new_password_confirmation: '',
+    });
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        postPassword(route('profile.update_password'), {
+            onSuccess: () => {
+                resetPassword();
+                console.log('Password updated successfully');
+            },
+            onError: (errors) => console.error('Password update errors:', errors),
+        });
+    };
+
     // Avatar upload
     const handleAvatarClick = () => {
         fileInputRef.current?.click();
@@ -159,12 +184,12 @@ export default function Profile({ user, manager }: ProfileProps) {
                                 
                                 {/* Badges */}
                                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-success-bg text-success-text border border-success-text/10">
+                                    {/* <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-success-bg text-success-text border border-success-text/10">
                                         <CheckCircle2 className="h-3.5 w-3.5" /> Verified Employee
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-info-bg text-info-text border border-info-text/10">
                                         <Building2 className="h-3.5 w-3.5 animate-pulse" /> {userLocation}
-                                    </span>
+                                    </span> */}
                                 </div>
                             </div>
 
@@ -317,6 +342,80 @@ export default function Profile({ user, manager }: ProfileProps) {
                                     {errors.bio && (
                                         <p className="text-xs font-medium text-danger-text">{errors.bio}</p>
                                     )}
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Change Password Form Card */}
+                        <div className="rounded-xl border border-border bg-surface-0 p-6 shadow-xs mt-6">
+                            <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                                <div className="flex items-center justify-between border-b border-border pb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Lock className="h-5 w-5 text-text-muted" />
+                                        <h3 className="text-lg font-bold text-text-primary">
+                                            Change Password
+                                        </h3>
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        disabled={passwordProcessing}
+                                        className="bg-brand-600 hover:bg-brand-700 text-white cursor-pointer shadow-sm border-none font-semibold px-5"
+                                    >
+                                        Update Password
+                                    </Button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Current Password */}
+                                    <div className="space-y-1.5 md:col-span-2 max-w-md">
+                                        <Label htmlFor="current_password" className="text-xs font-semibold text-text-secondary">
+                                            Current Password
+                                        </Label>
+                                        <Input
+                                            id="current_password"
+                                            type="password"
+                                            value={passwordData.current_password}
+                                            onChange={(e) => setPasswordData('current_password', e.target.value)}
+                                            className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                            required
+                                        />
+                                        {passwordErrors.current_password && (
+                                            <p className="text-xs font-medium text-danger-text">{passwordErrors.current_password}</p>
+                                        )}
+                                    </div>
+
+                                    {/* New Password */}
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="new_password" className="text-xs font-semibold text-text-secondary">
+                                            New Password
+                                        </Label>
+                                        <Input
+                                            id="new_password"
+                                            type="password"
+                                            value={passwordData.new_password}
+                                            onChange={(e) => setPasswordData('new_password', e.target.value)}
+                                            className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                            required
+                                        />
+                                        {passwordErrors.new_password && (
+                                            <p className="text-xs font-medium text-danger-text">{passwordErrors.new_password}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Confirm New Password */}
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="new_password_confirmation" className="text-xs font-semibold text-text-secondary">
+                                            Confirm New Password
+                                        </Label>
+                                        <Input
+                                            id="new_password_confirmation"
+                                            type="password"
+                                            value={passwordData.new_password_confirmation}
+                                            onChange={(e) => setPasswordData('new_password_confirmation', e.target.value)}
+                                            className="h-10 border-border bg-surface-0 text-text-primary focus-visible:ring-accent-500"
+                                            required
+                                        />
+                                    </div>
                                 </div>
                             </form>
                         </div>

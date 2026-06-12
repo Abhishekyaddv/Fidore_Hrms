@@ -68,7 +68,7 @@ class EmployeeController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'dob' => 'nullable|date',
+            'dob' => 'required|date',
             'gender' => 'nullable|string|max:50',
             'phone' => 'nullable|string|max:50',
             'employee_id' => [
@@ -81,7 +81,6 @@ class EmployeeController extends Controller
             'joining_date' => 'required|date',
             'employment_type' => 'required|string|in:Full-time,Probation,Intern',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
             'custom_leave_year' => 'nullable|integer',
             'custom_cl' => 'nullable|integer',
             'custom_sl' => 'nullable|integer',
@@ -99,10 +98,22 @@ class EmployeeController extends Controller
             }
         }
 
-        User::create([
+        $dobYear = \Carbon\Carbon::parse($request->dob)->format('Y');
+        $firstNameParts = explode(' ', trim($request->name));
+        $firstWord = $firstNameParts[0];
+        $firstWordClean = preg_replace('/[^a-zA-Z]/', '', $firstWord);
+        if (strlen($firstWordClean) < 4) {
+            $baseName = str_pad($firstWordClean, 4, 'x', STR_PAD_RIGHT);
+        } else {
+            $baseName = substr($firstWordClean, 0, 4);
+        }
+        $baseName = ucfirst(strtolower($baseName));
+        $generatedPassword = $baseName . '@' . $dobYear;
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make($generatedPassword),
             'role' => $role,
             'designation_id' => $request->designation_id,
             'dob' => $request->dob,
@@ -118,7 +129,9 @@ class EmployeeController extends Controller
             'reporting_manager_id' => $request->reporting_manager_id,
         ]);
 
-        return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully.');
+        \Illuminate\Support\Facades\Mail::to($user->email)->queue(new \App\Mail\NewHireWelcomeMail($user, $generatedPassword));
+
+        return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully. Welcome email sent.');
     }
 
     /**

@@ -41,13 +41,14 @@ export function AppSidebar() {
             variant="inset"
             className={isAdmin ? 'admin-sidebar bg-white' : 'bg-white'}
         >
-            <SidebarHeader className="border-b border-black/[0.05] px-5 py-5">
+            <SidebarHeader className="border-b border-black/[0.05] px-5 py-5 group-data-[collapsible=icon]:px-3">
                 <Link
                     href="/dashboard"
-                    className="flex items-center px-1"
+                    className="flex items-center gap-3 px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                     prefetch
                 >
-                    <span className="text-lg font-bold tracking-tight text-[#1A365D]">
+                    <AppLogoIcon className="size-8 text-[#1A365D]" />
+                    <span className="text-lg font-bold tracking-tight text-[#1A365D] group-data-[collapsible=icon]:hidden">
                         HRMS Portal
                     </span>
                 </Link>
@@ -60,6 +61,7 @@ export function AppSidebar() {
                         px-2 pb-1 pt-2
                         text-[11px] font-semibold uppercase tracking-[0.6px]
                         text-gray-800
+                        group-data-[collapsible=icon]:hidden
                     ">
                         Admin
                     </p>

@@ -1,6 +1,6 @@
-import { AppSidebar } from '@/components/app-sidebar';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { Head, usePage } from '@inertiajs/react';
 import { 
     CalendarDays, 
@@ -22,6 +22,13 @@ import { AddPolicyModal } from '@/components/add-policy-modal';
 import { EditPolicyModal } from '@/components/edit-policy-modal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { router } from '@inertiajs/react';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Company Policies',
+        href: '/company-policies',
+    },
+];
 
 export default function CompanyPolicies({ policies = [] }: any) {
     const { auth } = usePage<any>().props;
@@ -64,8 +71,7 @@ export default function CompanyPolicies({ policies = [] }: any) {
     };
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
+        <AppLayout breadcrumbs={breadcrumbs}>
             <div className="flex w-full flex-col bg-[#F9FAFB] min-h-screen">
                 <Head title="Company Policies" />
                 
@@ -255,6 +261,6 @@ export default function CompanyPolicies({ policies = [] }: any) {
                     />
                 </>
             )}
-        </SidebarProvider>
+        </AppLayout>
     );
 }

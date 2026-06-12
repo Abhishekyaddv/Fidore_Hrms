@@ -93,4 +93,28 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.show')->with('success', 'Profile photo updated successfully.');
     }
+
+    /**
+     * Update user password.
+     */
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|current_password',
+            'new_password' => [
+                'required',
+                'min:8',
+                'regex:/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/',
+                'confirmed',
+            ],
+        ], [
+            'new_password.regex' => 'Password must contain at least one uppercase letter, one number, and one special character.',
+        ]);
+
+        $request->user()->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['new_password']),
+        ]);
+
+        return redirect()->route('profile.show')->with('success', 'Password updated successfully.');
+    }
 }
