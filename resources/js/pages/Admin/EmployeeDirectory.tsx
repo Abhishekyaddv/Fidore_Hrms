@@ -1,5 +1,6 @@
 import { AddEmployeeModal } from '@/components/add-employee-modal';
 import { ViewAttendanceModal } from '@/components/view-attendance-modal';
+import { ActiveEmployeesModal } from '@/components/active-employees-modal';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -28,11 +29,13 @@ export default function EmployeeDirectory({
     totalStaff,
     activeNow,
     nextEmployeeId,
+    activeEmployeesList = [],
 }: any) {
     const { auth } = usePage<any>().props;
     const user = auth.user;
     
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isActiveEmployeesOpen, setIsActiveEmployeesOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState('');
     
@@ -147,13 +150,16 @@ export default function EmployeeDirectory({
                         </div>
 
                         {/* Active Now Card */}
-                        <div className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden flex items-center gap-5">
+                        <div 
+                            onClick={() => setIsActiveEmployeesOpen(true)}
+                            className="rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden flex items-center gap-5 cursor-pointer group hover:-translate-y-1 transition-all"
+                        >
                             <div className="absolute -left-4 -bottom-4 w-20 h-20 bg-emerald-200/40 rounded-full blur-2xl"></div>
                             <div className="p-4 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl shadow-lg shadow-emerald-500/20 relative z-10">
                                 <UserCheck className="h-6 w-6 text-white" />
                             </div>
                             <div className="relative z-10">
-                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Active Now</p>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-emerald-600 transition-colors">Active Now</p>
                                 <h3 className="text-3xl font-black text-slate-800 mt-1">{activeNow}</h3>
                             </div>
                         </div>
@@ -359,6 +365,12 @@ export default function EmployeeDirectory({
                 isOpen={isAttendanceModalOpen}
                 setIsOpen={setIsAttendanceModalOpen}
                 employee={selectedEmployeeForAttendance}
+            />
+
+            <ActiveEmployeesModal
+                isOpen={isActiveEmployeesOpen}
+                setIsOpen={setIsActiveEmployeesOpen}
+                employees={activeEmployeesList}
             />
         </AppLayout>
     );

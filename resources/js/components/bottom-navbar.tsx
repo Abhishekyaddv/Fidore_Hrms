@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Home, Users, Settings, User } from 'lucide-react';
+import { Home, Users, Settings, User, ListTodo, Trophy } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { SharedData } from '@/types';
@@ -56,6 +56,24 @@ export function BottomNavbar() {
                         <Users className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={currentPath.startsWith('/admin/employees') ? 2.5 : 2} />
                     </Link>
                 )}
+
+                {/* Tasks */}
+                <Link 
+                    href="/tasks"
+                    className={`p-3 rounded-full transition-all duration-300 ${currentPath === '/tasks' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                    prefetch
+                >
+                    <ListTodo className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={currentPath === '/tasks' ? 2.5 : 2} />
+                </Link>
+
+                {/* Leaderboard */}
+                <Link 
+                    href="/tasks/leaderboard"
+                    className={`p-3 rounded-full transition-all duration-300 ${currentPath.startsWith('/tasks/leaderboard') ? 'bg-amber-400 text-amber-900 shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'text-gray-400 hover:text-amber-400'}`}
+                    prefetch
+                >
+                    <Trophy className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={currentPath.startsWith('/tasks/leaderboard') ? 2.5 : 2} />
+                </Link>
 
                 {/* Profile */}
                 <Link 

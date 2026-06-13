@@ -19,26 +19,16 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         
-        // Find a suitable manager from user directory (excluding current user)
-        $manager = User::where('id', '!=', $user->id)
-            ->whereIn('role', ['superadmin', 'hr'])
-            ->first();
+        // Find the assigned manager from user relationships
+        $manager = $user->reportingManager;
 
         $managerData = null;
         if ($manager) {
             $managerData = [
                 'name' => $manager->name,
                 'email' => $manager->email,
-                'designation' => $manager->role === 'superadmin' ? 'Super Administrator' : 'HR Manager',
+                'designation' => $manager->role === 'superadmin' ? 'Super Administrator' : ($manager->role === 'hr' ? 'HR Manager' : 'Manager'),
                 'avatar' => $manager->avatar,
-            ];
-        } else {
-            // Elegant fallback spec data matching the reference mockup
-            $managerData = [
-                'name' => 'Elena Rodriguez',
-                'email' => 'e.rodriguez@company.com',
-                'designation' => 'Head of People Operations',
-                'avatar' => null,
             ];
         }
 
@@ -79,15 +69,25 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
             // Delete old avatar if it exists and was uploaded
-            if ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
+            if ($user->avatar && str_starts_with($user->avatar, '/avatars/')) {
+                $oldFilename = str_replace('/avatars/', '', $user->avatar);
+                $oldPath = public_path('avatars/' . $oldFilename);
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            } elseif ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
+                // Legacy path support
                 $oldPath = str_replace('/storage/', '', $user->avatar);
                 Storage::disk('public')->delete($oldPath);
             }
 
-            // Store new avatar
-            $path = $request->file('avatar')->store('avatars', 'public');
+            // Store new avatar directly in public/avatars to avoid symlink issues on live servers
+            $file = $request->file('avatar');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('avatars'), $filename);
+
             $user->update([
-                'avatar' => '/storage/' . $path,
+                'avatar' => '/avatars/' . $filename,
             ]);
         }
 

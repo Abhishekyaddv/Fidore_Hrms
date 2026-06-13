@@ -33,7 +33,25 @@ class EmployeeController extends Controller
             ->paginate(10);
 
         $totalStaff = $employees->total();
-        $activeNow = $totalStaff; // Placeholder as requested
+        
+        $activeAttendances = \App\Models\Attendance::with('user')
+            ->where('date', now()->toDateString())
+            ->whereNotNull('punch_in')
+            ->whereNull('punch_out')
+            ->get();
+            
+        $activeNow = $activeAttendances->count();
+        
+        $activeEmployeesList = $activeAttendances->map(function ($att) {
+            return [
+                'id' => $att->user->id,
+                'name' => $att->user->name,
+                'email' => $att->user->email,
+                'role' => $att->user->role,
+                'avatar' => $att->user->avatar,
+                'punch_in' => $att->punch_in,
+            ];
+        });
 
         // Calculate next sequential employee ID for the Add Employee modal
         $lastSeq = User::whereNotNull('employee_id')
@@ -51,6 +69,7 @@ class EmployeeController extends Controller
             'totalStaff' => $totalStaff,
             'activeNow' => $activeNow,
             'nextEmployeeId' => $nextEmployeeId,
+            'activeEmployeesList' => $activeEmployeesList,
         ]);
     }
 

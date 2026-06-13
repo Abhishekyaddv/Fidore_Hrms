@@ -5,6 +5,7 @@ import { Download, MoreVertical, Plus, Users, CalendarX, MapPin, CheckCircle2, C
 import { Button } from '@/components/ui/button';
 import React, { useState, useEffect } from 'react';
 import { AddEmployeeModal } from '@/components/add-employee-modal';
+import { ActiveEmployeesModal } from '@/components/active-employees-modal';
 
 interface Attendance {
     id: number;
@@ -45,6 +46,7 @@ interface AdminDashboardProps {
         radius_meters: number;
         address: string | null;
     } | null;
+    activeEmployees?: any[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -61,8 +63,10 @@ export default function AdminDashboard({
     employees = [],
     latestLocation = null,
     officeLocation = null,
+    activeEmployees = [],
 }: AdminDashboardProps) {
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+    const [isActiveEmployeesOpen, setIsActiveEmployeesOpen] = useState(false);
     const { auth, errors } = usePage<any>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
@@ -259,10 +263,6 @@ export default function AdminDashboard({
                             
                             <div className="p-6 sm:p-8 flex flex-col justify-between flex-1 relative z-10">
                                 <div>
-                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100/80 px-3 py-1.5 text-xs font-bold text-indigo-700 mb-6 backdrop-blur-md shadow-sm border border-indigo-200/50">
-                                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                                        Live Status
-                                    </div>
                                     <h2 className="text-2xl font-extrabold text-slate-800 mb-2">Attendance Terminal</h2>
                                     <p className="text-slate-500 font-medium">Log your daily work hours from your registered location.</p>
                                     
@@ -438,14 +438,17 @@ export default function AdminDashboard({
                             </div>
 
                             {/* Stats Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 w-full">
-                                {/* Present */}
-                                <div className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 w-3/4">
+                                {/* Present / Active */}
+                                <div 
+                                    onClick={() => setIsActiveEmployeesOpen(true)}
+                                    className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer group"
+                                >
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Present</p>
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500 group-hover:text-emerald-600 transition-colors">Active Now</p>
                                     </div>
-                                    <p className="text-3xl font-black text-slate-800">{stats.presentCount}</p>
+                                    <p className="text-3xl font-black text-slate-800">{activeEmployees.length}</p>
                                 </div>
                                 
                                 {/* Late */}
@@ -477,6 +480,12 @@ export default function AdminDashboard({
                 setIsOpen={setIsAddEmployeeOpen}
                 nextEmployeeId={nextEmployeeId}
                 allUsers={employees}
+            />
+
+            <ActiveEmployeesModal
+                isOpen={isActiveEmployeesOpen}
+                setIsOpen={setIsActiveEmployeesOpen}
+                employees={activeEmployees}
             />
         </AppLayout>
     );

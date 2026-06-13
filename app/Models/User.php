@@ -67,6 +67,11 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class);
     }
 
+    public function subtasks()
+    {
+        return $this->hasMany(Subtask::class);
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

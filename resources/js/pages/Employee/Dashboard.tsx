@@ -81,6 +81,32 @@ export default function Dashboard({
     const [currentDate, setCurrentDate] = useState('');
     const [preFetchedLocation, setPreFetchedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [isPunching, setIsPunching] = useState(false);
+    const [liveTotalMinutes, setLiveTotalMinutes] = useState(todayAttendance?.total_logged_minutes || 0);
+
+    // Live total minutes calculation
+    useEffect(() => {
+        const calculateLiveMinutes = () => {
+            let baseMinutes = todayAttendance?.total_logged_minutes || 0;
+            const history = todayAttendance?.punch_history || [];
+            
+            if (history.length > 0) {
+                const lastSession = history[history.length - 1];
+                if (lastSession.out === null) {
+                    // Currently punched in
+                    const inTime = new Date(lastSession.in).getTime();
+                    const now = new Date().getTime();
+                    const diffMinutes = Math.floor((now - inTime) / 60000);
+                    baseMinutes += diffMinutes;
+                }
+            }
+            setLiveTotalMinutes(baseMinutes);
+        };
+
+        calculateLiveMinutes();
+        // Update every 60 seconds
+        const interval = setInterval(calculateLiveMinutes, 60000);
+        return () => clearInterval(interval);
+    }, [todayAttendance]);
 
     // Update real-time clock
     useEffect(() => {
@@ -350,10 +376,7 @@ export default function Dashboard({
                             
                             <div className="p-6 sm:p-8 flex flex-col justify-between flex-1 relative z-10">
                                 <div>
-                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100/80 px-3 py-1.5 text-xs font-bold text-indigo-700 mb-6 backdrop-blur-md shadow-sm border border-indigo-200/50">
-                                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                                        Working Hours
-                                    </div>
+                                    
                                     
                                     {todayAttendance && todayAttendance.minutes_late && todayAttendance.minutes_late > 0 ? (
                                         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 backdrop-blur-md border border-amber-500/20 text-amber-700 text-sm flex items-start sm:items-center gap-3 shadow-sm">
@@ -396,15 +419,26 @@ export default function Dashboard({
                                 </div>
 
                                 {todayAttendance && (
-                                    <div className="flex flex-wrap gap-4 text-xs font-bold mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm w-fit">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-1.5 bg-indigo-100 rounded-lg">
-                                                <Clock className="w-4 h-4 text-indigo-600" />
+                                    <div className="flex flex-wrap gap-4 text-xs font-bold mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm w-fit relative overflow-hidden group">
+                                        {isPunchedIn() && (
+                                            <div className="absolute top-0 left-0 w-1 bg-emerald-500 h-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
+                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-xl transition-colors ${isPunchedIn() ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
+                                                <Clock className={`w-5 h-5 ${isPunchedIn() ? 'text-emerald-600' : 'text-indigo-600'}`} />
                                             </div>
                                             <div>
-                                                <span className="text-slate-500 block text-[10px] uppercase tracking-widest">Total Logged Today</span>
-                                                <span className="text-indigo-600 text-base">
-                                                    {Math.floor((todayAttendance.total_logged_minutes || 0) / 60)}h {(todayAttendance.total_logged_minutes || 0) % 60}m
+                                                <span className="text-slate-500 block text-[10px] uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
+                                                    Total Logged Today
+                                                    {isPunchedIn() && (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                            LIVE
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <span className={`text-xl transition-colors ${isPunchedIn() ? 'text-emerald-600 font-extrabold' : 'text-indigo-600'}`}>
+                                                    {Math.floor(liveTotalMinutes / 60)}h {liveTotalMinutes % 60}m
                                                 </span>
                                             </div>
                                         </div>

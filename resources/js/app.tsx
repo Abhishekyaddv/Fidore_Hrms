@@ -5,6 +5,8 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
 import { initializeTheme } from './hooks/use-appearance';
+import axios from 'axios';
+import './echo';
 
 declare global {
     const route: typeof routeFn;
@@ -43,3 +45,11 @@ router.on('before', (event) => {
         event.detail.visit.headers['Authorization'] = `Bearer ${savedToken}`;
     }
 });
+
+// Configure Axios with the bearer token
+axios.defaults.withCredentials = true;
+
+const savedToken = localStorage.getItem('bearer_token');
+if (savedToken) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+}

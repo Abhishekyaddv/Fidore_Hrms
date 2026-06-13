@@ -40,11 +40,24 @@ Route::middleware(['auth'])->group(function () {
                 ->whereNotNull('punch_in')
                 ->count();
 
-            $attendancesToday = \App\Models\Attendance::whereHas('user', function ($q) {
+            $attendancesToday = \App\Models\Attendance::with('user')->whereHas('user', function ($q) {
                 $q->where('role', '!=', 'superadmin');
             })->where('date', now()->toDateString())
                 ->whereNotNull('punch_in')
                 ->get();
+                
+            $activeEmployees = $attendancesToday->filter(function ($att) {
+                return is_null($att->punch_out);
+            })->map(function ($att) {
+                return [
+                    'id' => $att->user->id,
+                    'name' => $att->user->name,
+                    'email' => $att->user->email,
+                    'role' => $att->user->role,
+                    'avatar' => $att->user->avatar,
+                    'punch_in' => $att->punch_in,
+                ];
+            })->values();
             $lateCount = $attendancesToday->filter(function ($att) {
                 return $att->punch_in ? $att->punch_in->format('H:i:s') > '09:30:00' : false;
             })->count();
@@ -68,6 +81,7 @@ Route::middleware(['auth'])->group(function () {
                     'absentCount' => $absentCount,
                     'presentPercentage' => $presentPercentage,
                 ],
+                'activeEmployees' => $activeEmployees,
             ]);
         }
 
@@ -114,6 +128,27 @@ Route::middleware(['auth'])->group(function () {
     Route::post('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update_info');
     Route::post('profile/avatar', [\App\Http\Controllers\ProfileController::class, 'updateAvatar'])->name('profile.update_avatar');
     Route::post('profile/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.update_password');
+    // Tasks
+    Route::get('/tasks', function () {
+        return Inertia::render('Tasks/Index');
+    })->name('tasks.index')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+    
+    Route::get('/tasks/create', function () {
+        return Inertia::render('Tasks/Create');
+    })->name('tasks.create')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+
+    Route::get('/tasks/leaderboard', function () {
+        return Inertia::render('Tasks/Leaderboard');
+    })->name('tasks.leaderboard')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+    
+    Route::get('/tasks/{id}', function ($id) {
+        return Inertia::render('Tasks/Show', ['taskId' => $id]);
+    })->name('tasks.show')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+
+    Route::get('/tasks/{id}/edit', function ($id) {
+        return Inertia::render('Tasks/Edit', ['taskId' => $id]);
+    })->name('tasks.edit')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+
 });
 
 
