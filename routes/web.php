@@ -101,12 +101,17 @@ Route::middleware(['auth'])->group(function () {
 
         $officeLocation = \App\Models\OfficeLocation::first();
 
+        $recentTask = \App\Models\Task::whereHas('assignees', function($q) use ($user) {
+            $q->where('users.id', $user->id);
+        })->latest()->first();
+
         return Inertia::render('Employee/Dashboard', [
             'employee' => $user,
             'todayAttendance' => $todayAttendance,
             'latestLocation' => $latestLocation,
             'officeLocation' => $officeLocation,
             'monthAttendances' => $monthAttendances,
+            'recentTask' => $recentTask,
         ]);
     })->name('dashboard')->middleware(\App\Http\Middleware\CheckBearerToken::class);
 

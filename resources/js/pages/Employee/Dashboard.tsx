@@ -59,6 +59,14 @@ interface DashboardProps {
         radius_meters: number;
         address: string | null;
     } | null;
+    recentTask?: {
+        id: number;
+        title: string;
+        description: string;
+        priority: string;
+        status: string;
+        deadline: string | null;
+    } | null;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -74,6 +82,7 @@ export default function Dashboard({
     monthAttendances = [],
     latestLocation = null,
     officeLocation = null,
+    recentTask = null,
 }: DashboardProps) {
     const { auth, errors } = usePage<any>().props;
     const [currentTime, setCurrentTime] = useState('');
@@ -547,17 +556,54 @@ export default function Dashboard({
                                     </span>
                                 </div>
 
-                                <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
-                                    <div className="w-20 h-20 bg-slate-100/80 rounded-full flex items-center justify-center mb-6 shadow-inner border border-white">
-                                        <Calendar className="h-8 w-8 text-slate-400" />
+                                {recentTask ? (
+                                    <div className="flex-1 flex flex-col">
+                                        <div className="mb-4">
+                                            <h4 className="font-extrabold text-lg text-slate-800 mb-1 leading-tight line-clamp-2">
+                                                {recentTask.title}
+                                            </h4>
+                                            <p className="text-sm text-slate-500 font-medium line-clamp-2">
+                                                {recentTask.description}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-200/50">
+                                            <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-xl border shadow-sm ${
+                                                recentTask.priority === 'critical' ? 'bg-rose-500/10 text-rose-700 border-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.15)]' :
+                                                recentTask.priority === 'high' ? 'bg-orange-500/10 text-orange-700 border-orange-200 shadow-[0_0_15px_rgba(249,115,22,0.15)]' :
+                                                recentTask.priority === 'medium' ? 'bg-blue-500/10 text-blue-700 border-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.15)]' :
+                                                'bg-emerald-500/10 text-emerald-700 border-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                                            }`}>
+                                                {recentTask.priority}
+                                            </span>
+                                            <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-xl border bg-slate-100/80 text-slate-600 border-white shadow-sm">
+                                                {recentTask.status.replace('_', ' ')}
+                                            </span>
+                                            {recentTask.deadline && (
+                                                <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-xl border bg-slate-100/80 text-slate-600 border-white shadow-sm flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" />
+                                                    {new Date(recentTask.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="mt-4 flex justify-end">
+                                            <button onClick={() => router.visit(`/tasks/${recentTask.id}`)} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition flex items-center gap-1">
+                                                View Task &rarr;
+                                            </button>
+                                        </div>
                                     </div>
-                                    <h4 className="font-extrabold text-lg text-slate-800 mb-2">
-                                        No recent tasks or requests
-                                    </h4>
-                                    <p className="text-sm text-slate-500 max-w-sm font-medium">
-                                        When you log requests, submit timesheets, or check leaves, they will elegantly appear right here.
-                                    </p>
-                                </div>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
+                                        <div className="w-20 h-20 bg-slate-100/80 rounded-full flex items-center justify-center mb-6 shadow-inner border border-white">
+                                            <Calendar className="h-8 w-8 text-slate-400" />
+                                        </div>
+                                        <h4 className="font-extrabold text-lg text-slate-800 mb-2">
+                                            No recent tasks or requests
+                                        </h4>
+                                        <p className="text-sm text-slate-500 max-w-sm font-medium">
+                                            When you log requests, submit timesheets, or check leaves, they will elegantly appear right here.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

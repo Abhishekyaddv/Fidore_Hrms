@@ -54,6 +54,21 @@ export default function TasksIndex() {
         }
     };
 
+    const getPriorityCardTint = (priority: string) => {
+        switch (priority.toLowerCase()) {
+            case 'critical':
+                return 'shadow-[0_4px_20px_rgba(244,63,94,0.15)] hover:shadow-[0_8px_30px_rgba(244,63,94,0.25)] border-rose-200/60';
+            case 'high':
+                return 'shadow-[0_4px_20px_rgba(249,115,22,0.15)] hover:shadow-[0_8px_30px_rgba(249,115,22,0.25)] border-orange-200/60';
+            case 'medium':
+                return 'shadow-[0_4px_20px_rgba(59,130,246,0.15)] hover:shadow-[0_8px_30px_rgba(59,130,246,0.25)] border-blue-200/60';
+            case 'low':
+                return 'shadow-[0_4px_20px_rgba(16,185,129,0.15)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.25)] border-emerald-200/60';
+            default:
+                return 'shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-lg border-white/80';
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
             case 'completed':
@@ -152,7 +167,7 @@ export default function TasksIndex() {
                                 <Link 
                                     href={`/tasks/${task.id}`} 
                                     key={task.id} 
-                                    className="group bg-white/60 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/80 hover:bg-white transition-all duration-300 hover:shadow-lg active:scale-[0.98] flex flex-col relative overflow-hidden"
+                                    className={`group bg-white/60 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border hover:bg-white transition-all duration-300 active:scale-[0.98] flex flex-col relative overflow-hidden ${getPriorityCardTint(task.priority)}`}
                                 >
                                     {/* Inner Glass Highlight */}
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-50 pointer-events-none"></div>
