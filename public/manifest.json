@@ -1,6 +1,6 @@
 {
   "name": "Fidore HRMS",
-  "short_name": "HRMS",
+  "short_name": "Fidore",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

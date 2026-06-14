@@ -128,9 +128,7 @@ class EmployeeController extends Controller
             'reporting_manager_id' => $request->reporting_manager_id,
         ]);
 
-        \Illuminate\Support\Facades\Mail::to($user->email)->queue(new \App\Mail\NewHireWelcomeMail($user, $generatedPassword));
-
-        return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully. Welcome email sent.');
+        return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully. Auto-generated password: ' . $generatedPassword);
     }
 
     /**

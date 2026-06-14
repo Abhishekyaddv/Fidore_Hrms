@@ -86,7 +86,6 @@ class AttendanceController extends Controller
                 'longitude' => $request->longitude,
                 'type' => 'punch_in',
             ]);
-            \App\Jobs\FetchLocationAddress::dispatch($userLocation);
         }
 
         return back()->with('success', 'Punched in successfully.');
@@ -161,7 +160,6 @@ class AttendanceController extends Controller
                 'longitude' => $request->longitude,
                 'type' => 'punch_out',
             ]);
-            \App\Jobs\FetchLocationAddress::dispatch($userLocation);
         }
 
         return back()->with('success', 'Punched out successfully.');

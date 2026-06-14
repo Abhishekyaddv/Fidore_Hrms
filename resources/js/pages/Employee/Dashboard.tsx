@@ -51,7 +51,6 @@ interface DashboardProps {
         id: number;
         latitude: number;
         longitude: number;
-        address: string | null;
         type: string;
     } | null;
     officeLocation?: {
@@ -248,7 +247,7 @@ export default function Dashboard({
                 disabled: isPunching,
                 className: 'w-full sm:w-fit bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold cursor-pointer h-14 px-8 rounded-2xl shadow-[0_8px_20px_-4px_rgba(59,130,246,0.5)] flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed border border-blue-400/30 group relative',
                 icon: isPunching ? <Loader2 className="h-5 w-5 animate-spin" /> : <MapPin className="h-5 w-5" />,
-                tooltip: latestLocation?.address ? `Last punched out from: ${latestLocation.address}` : 'Ready to punch in'
+                tooltip: 'Ready to punch in'
             };
         }
         return {
@@ -256,7 +255,7 @@ export default function Dashboard({
             disabled: isPunching,
             className: 'w-full sm:w-fit bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold cursor-pointer h-14 px-8 rounded-2xl shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed border border-orange-400/30 group relative',
             icon: isPunching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Clock className="h-5 w-5" />,
-            tooltip: latestLocation?.address ? `Punched in from: ${latestLocation.address}` : 'Punched in'
+            tooltip: 'Punched in'
         };
     };
 
