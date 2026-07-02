@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CheckCircle, Clock, CalendarDays, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Clock, CalendarDays, Loader2, Coffee } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,7 +90,7 @@ export function ViewAttendanceModal({
             let needsRegularization = false;
 
             const dateObj = new Date(year, month, day);
-            const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+            const isWeekend = dateObj.getDay() === 0; // Only Sunday is an off day
             const isPast = dateObj < new Date(new Date().setHours(0,0,0,0));
 
             if (record) {
@@ -111,6 +111,8 @@ export function ViewAttendanceModal({
                 }
             } else if (isPast && !isWeekend) {
                 borderClass = 'border-red-500 text-red-700';
+            } else if (isWeekend) {
+                borderClass = 'border-slate-200 bg-slate-100/50 text-slate-400 opacity-60';
             }
 
             grid.push(
@@ -145,6 +147,12 @@ export function ViewAttendanceModal({
                             <CheckCircle className="h-2.5 w-2.5" />
                         </div>
                     )}
+
+                    {isWeekend && !record && (
+                        <div className="absolute top-1.5 right-1.5 text-slate-400" title="Weekly Off">
+                            <Coffee className="h-2.5 w-2.5" />
+                        </div>
+                    )}
                     
                     {/* Hover indicator */}
                     <div className="absolute inset-0 bg-white/0 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 pointer-events-none">
@@ -173,6 +181,10 @@ export function ViewAttendanceModal({
                     alert(err.regularize);
                 } else if (err.out_time) {
                     alert(err.out_time);
+                } else if (err.date) {
+                    alert(err.date);
+                } else {
+                    alert(Object.values(err)[0]);
                 }
             }
         });
@@ -245,6 +257,10 @@ export function ViewAttendanceModal({
                                             <div className="w-3 h-3 rounded-full border-2 border-red-500 bg-white/40"></div>
                                             <span>Absent</span>
                                         </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Coffee className="h-3.5 w-3.5 text-slate-400" />
+                                            <span>Weekly Off</span>
+                                        </div>
                                         <div className="flex items-center gap-1.5 sm:ml-auto">
                                             <CheckCircle className="h-3.5 w-3.5 text-indigo-500" />
                                             <span>Regularized</span>
@@ -303,7 +319,7 @@ export function ViewAttendanceModal({
                             </div>
                             
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mt-1">
-                                Max 2 regularizations/month
+                                Past dates only
                             </p>
                         </div>
                         

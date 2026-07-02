@@ -21,12 +21,14 @@ interface ActiveEmployeesModalProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
     employees: ActiveEmployee[];
+    title?: string;
 }
 
 export function ActiveEmployeesModal({
     isOpen,
     setIsOpen,
     employees = [],
+    title = 'Active Employees',
 }: ActiveEmployeesModalProps) {
     
     const formatTime = (timeString: string | null) => {
@@ -54,11 +56,13 @@ export function ActiveEmployeesModal({
                                 <UserCheck className="h-5 w-5" />
                             </div>
                             <DialogTitle className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-800">
-                                Active Employees
+                                {title}
                             </DialogTitle>
                         </div>
                         <DialogDescription className="text-sm font-medium text-slate-500">
-                            Currently working team members who have punched in today.
+                            {title === 'Active Employees' ? 'Currently working team members who have punched in today.' : 
+                             title === 'Late Arrivals' ? 'Team members who punched in after 10:20 AM today.' : 
+                             'Team members who have not punched in today.'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -69,8 +73,8 @@ export function ActiveEmployeesModal({
                                 <div className="w-16 h-16 bg-white/60 rounded-full flex items-center justify-center mb-4 shadow-sm border border-white">
                                     <UserCheck className="h-8 w-8 text-slate-400" />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-800">No active employees</h3>
-                                <p className="text-slate-500 text-sm mt-1">Everyone has punched out or no one has arrived yet.</p>
+                                <h3 className="text-lg font-bold text-slate-800">No {title.toLowerCase()}</h3>
+                                <p className="text-slate-500 text-sm mt-1">There is no one in this list.</p>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-3">
@@ -90,9 +94,17 @@ export function ActiveEmployeesModal({
                                         </div>
                                         
                                         <div className="flex flex-col items-end gap-1 shrink-0">
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-emerald-50/80 text-emerald-600 border border-emerald-100 shadow-sm">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                Active
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                title === 'Active Employees' ? 'bg-emerald-50/80 text-emerald-600 border border-emerald-100' :
+                                                title === 'Late Arrivals' ? 'bg-amber-50/80 text-amber-600 border border-amber-100' :
+                                                'bg-red-50/80 text-red-600 border border-red-100'
+                                            } shadow-sm`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                                    title === 'Active Employees' ? 'bg-emerald-500 animate-pulse' :
+                                                    title === 'Late Arrivals' ? 'bg-amber-500' :
+                                                    'bg-red-500'
+                                                }`}></span>
+                                                {title === 'Active Employees' ? 'Active' : title === 'Late Arrivals' ? 'Late' : 'Absent'}
                                             </div>
                                             <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
                                                 <Clock className="w-3 h-3" />

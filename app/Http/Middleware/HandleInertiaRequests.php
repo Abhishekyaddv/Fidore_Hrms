@@ -47,6 +47,12 @@ class HandleInertiaRequests extends Middleware
                 'token' => $request->session()->get('token'),
                 'clear_token' => $request->session()->get('clear_token'),
             ],
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'generated_password' => $request->session()->get('generated_password'),
+                'generated_email' => $request->session()->get('generated_email'),
+            ],
         ]);
     }
 }

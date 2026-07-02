@@ -1,6 +1,7 @@
 import { AddEmployeeModal } from '@/components/add-employee-modal';
 import { ViewAttendanceModal } from '@/components/view-attendance-modal';
 import { ActiveEmployeesModal } from '@/components/active-employees-modal';
+import { GeneratedPasswordModal } from '@/components/generated-password-modal';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -15,7 +16,7 @@ import {
     CalendarDays,
     Briefcase
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const breadcrumbs = [
     {
@@ -31,7 +32,7 @@ export default function EmployeeDirectory({
     nextEmployeeId,
     activeEmployeesList = [],
 }: any) {
-    const { auth } = usePage<any>().props;
+    const { auth, flash } = usePage<any>().props;
     const user = auth.user;
     
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -39,6 +40,26 @@ export default function EmployeeDirectory({
     const [editingEmployee, setEditingEmployee] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState('');
     
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    
+    useEffect(() => {
+        if (flash?.generated_password) {
+            setIsPasswordModalOpen(true);
+        }
+    }, [flash]);
+
+    // Real-time updater for active employees stats
+    useEffect(() => {
+        const statsUpdater = setInterval(() => {
+            router.reload({ 
+                only: ['activeNow', 'activeEmployeesList'], 
+                preserveScroll: true, 
+                preserveState: true 
+            });
+        }, 60000);
+        return () => clearInterval(statsUpdater);
+    }, []);
+
     const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
     const [selectedEmployeeForAttendance, setSelectedEmployeeForAttendance] = useState<any>(null);
 
@@ -349,6 +370,18 @@ export default function EmployeeDirectory({
                                 </div>
                             </div>
                         )}
+                        
+                        {/* View All Button */}
+                        {!new URLSearchParams(window.location.search).has('view_all') && employees.total > 2 && (
+                            <div className="p-4 sm:p-6 bg-slate-50/50 flex justify-center border-t border-white/60">
+                                <button
+                                    onClick={() => router.visit(route('admin.employees.index', { view_all: 1 }))}
+                                    className="bg-white hover:bg-slate-50 text-indigo-600 border border-indigo-100 shadow-sm rounded-xl px-6 py-2.5 font-bold transition-all active:scale-95"
+                                >
+                                    View all {employees.total} employees
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -371,6 +404,13 @@ export default function EmployeeDirectory({
                 isOpen={isActiveEmployeesOpen}
                 setIsOpen={setIsActiveEmployeesOpen}
                 employees={activeEmployeesList}
+            />
+            
+            <GeneratedPasswordModal
+                isOpen={isPasswordModalOpen}
+                setIsOpen={setIsPasswordModalOpen}
+                email={flash?.generated_email}
+                password={flash?.generated_password}
             />
         </AppLayout>
     );

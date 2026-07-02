@@ -28,9 +28,10 @@ class EmployeeController extends Controller
     {
         $this->checkAccess();
 
+        $perPage = request()->has('view_all') ? 50 : 2;
         $employees = User::whereIn('role', ['employee', 'hr', 'superadmin'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate($perPage)->withQueryString();
 
         $totalStaff = $employees->total();
         
@@ -128,7 +129,11 @@ class EmployeeController extends Controller
             'reporting_manager_id' => $request->reporting_manager_id,
         ]);
 
-        return redirect()->route('admin.employees.index')->with('success', 'Employee profile created successfully. Auto-generated password: ' . $generatedPassword);
+        return redirect()->route('admin.employees.index')->with([
+            'success' => 'Employee profile created successfully.',
+            'generated_password' => $generatedPassword,
+            'generated_email' => $request->email
+        ]);
     }
 
     /**
@@ -216,9 +221,11 @@ class EmployeeController extends Controller
         $this->checkAccess();
 
         $request->validate([
-            'date' => 'required|date',
+            'date' => 'required|date|before:today',
             'in_time' => 'required|date_format:H:i',
             'out_time' => 'required|date_format:H:i',
+        ], [
+            'date.before' => 'Only past dates can be regularized.',
         ]);
 
         $user = \App\Models\User::findOrFail($id);
@@ -228,19 +235,6 @@ class EmployeeController extends Controller
 
         if ($outTime->lt($inTime)) {
             return back()->withErrors(['out_time' => 'Out time cannot be before punch-in time.']);
-        }
-
-        // Check if employee has already been regularized 2 times this month
-        $startOfMonth = \Carbon\Carbon::parse($date)->startOfMonth()->toDateString();
-        $endOfMonth = \Carbon\Carbon::parse($date)->endOfMonth()->toDateString();
-        
-        $regularizationCount = \App\Models\Attendance::where('user_id', $user->id)
-            ->whereBetween('date', [$startOfMonth, $endOfMonth])
-            ->where('is_regularized', true)
-            ->count();
-
-        if ($regularizationCount >= 2) {
-            return back()->withErrors(['regularize' => 'Employee has already reached the maximum of 2 regularizations this month.']);
         }
 
         $attendance = \App\Models\Attendance::firstOrCreate(

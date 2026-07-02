@@ -58,9 +58,34 @@ Route::middleware(['auth'])->group(function () {
                     'punch_in' => $att->punch_in,
                 ];
             })->values();
-            $lateCount = $attendancesToday->filter(function ($att) {
-                return $att->punch_in ? $att->punch_in->format('H:i:s') > '09:30:00' : false;
-            })->count();
+            $lateEmployees = $attendancesToday->filter(function ($att) {
+                return $att->punch_in ? $att->punch_in->copy()->setTimezone('Asia/Kolkata')->format('H:i:s') > '10:20:00' : false;
+            })->map(function ($att) {
+                return [
+                    'id' => $att->user->id,
+                    'name' => $att->user->name,
+                    'email' => $att->user->email,
+                    'role' => $att->user->role,
+                    'avatar' => $att->user->avatar,
+                    'punch_in' => $att->punch_in,
+                ];
+            })->values();
+            $lateCount = $lateEmployees->count();
+
+            $presentUserIds = $attendancesToday->pluck('user_id')->toArray();
+            $absentEmployees = \App\Models\User::where('role', '!=', 'superadmin')
+                ->whereNotIn('id', $presentUserIds)
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'avatar' => $user->avatar,
+                        'punch_in' => null,
+                    ];
+                })->values();
 
             $absentCount = max(0, $totalEmployees - $presentCount);
             $presentPercentage = $totalEmployees > 0 ? round(($presentCount / $totalEmployees) * 100) : 0;
@@ -82,6 +107,8 @@ Route::middleware(['auth'])->group(function () {
                     'presentPercentage' => $presentPercentage,
                 ],
                 'activeEmployees' => $activeEmployees,
+                'lateEmployees' => $lateEmployees,
+                'absentEmployees' => $absentEmployees,
             ]);
         }
 
@@ -128,6 +155,20 @@ Route::middleware(['auth'])->group(function () {
     // Attendance
     Route::post('attendance/punch-in', [\App\Http\Controllers\Employee\AttendanceController::class, 'punchIn'])->name('attendance.punch-in')->middleware(\App\Http\Middleware\CheckBearerToken::class);
     Route::post('attendance/punch-out', [\App\Http\Controllers\Employee\AttendanceController::class, 'punchOut'])->name('attendance.punch-out')->middleware(\App\Http\Middleware\CheckBearerToken::class);
+
+    Route::post('push-subscriptions', function (\Illuminate\Http\Request $request) {
+        $request->validate([
+            'endpoint' => 'required',
+            'keys.auth' => 'required',
+            'keys.p256dh' => 'required'
+        ]);
+        $request->user()->updatePushSubscription(
+            $request->endpoint,
+            $request->keys['p256dh'],
+            $request->keys['auth']
+        );
+        return response()->json(['success' => true]);
+    })->name('push-subscriptions.store');
 
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::post('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update_info');

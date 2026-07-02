@@ -47,6 +47,8 @@ interface AdminDashboardProps {
         address: string | null;
     } | null;
     activeEmployees?: any[];
+    lateEmployees?: any[];
+    absentEmployees?: any[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -64,9 +66,13 @@ export default function AdminDashboard({
     latestLocation = null,
     officeLocation = null,
     activeEmployees = [],
+    lateEmployees = [],
+    absentEmployees = [],
 }: AdminDashboardProps) {
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
     const [isActiveEmployeesOpen, setIsActiveEmployeesOpen] = useState(false);
+    const [isLateEmployeesOpen, setIsLateEmployeesOpen] = useState(false);
+    const [isAbsentEmployeesOpen, setIsAbsentEmployeesOpen] = useState(false);
     const { auth, errors } = usePage<any>().props;
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
@@ -121,6 +127,18 @@ export default function AdminDashboard({
         updateTime();
         const interval = setInterval(updateTime, 1000);
         return () => clearInterval(interval);
+    }, []);
+
+    // Real-time updater for active/late/absent employees stats
+    useEffect(() => {
+        const statsUpdater = setInterval(() => {
+            router.reload({ 
+                only: ['stats', 'activeEmployees', 'lateEmployees', 'absentEmployees'], 
+                preserveScroll: true, 
+                preserveState: true 
+            });
+        }, 60000);
+        return () => clearInterval(statsUpdater);
     }, []);
 
     // Pre-fetch location on mount
@@ -452,19 +470,25 @@ export default function AdminDashboard({
                                 </div>
                                 
                                 {/* Late */}
-                                <div className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                <div 
+                                    onClick={() => setIsLateEmployeesOpen(true)}
+                                    className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer group"
+                                >
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Late Arrivals</p>
+                                        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500 group-hover:text-amber-600 transition-colors">Late Arrivals</p>
                                     </div>
                                     <p className="text-3xl font-black text-amber-600">{stats.lateCount}</p>
                                 </div>
                                 
                                 {/* Absent */}
-                                <div className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                <div 
+                                    onClick={() => setIsAbsentEmployeesOpen(true)}
+                                    className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer group"
+                                >
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Absent</p>
+                                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                        <p className="text-xs font-black uppercase tracking-wider text-slate-500 group-hover:text-red-500 transition-colors">Absent</p>
                                     </div>
                                     <p className="text-3xl font-black text-red-500">{stats.absentCount}</p>
                                 </div>
@@ -486,6 +510,21 @@ export default function AdminDashboard({
                 isOpen={isActiveEmployeesOpen}
                 setIsOpen={setIsActiveEmployeesOpen}
                 employees={activeEmployees}
+                title="Active Employees"
+            />
+
+            <ActiveEmployeesModal
+                isOpen={isLateEmployeesOpen}
+                setIsOpen={setIsLateEmployeesOpen}
+                employees={lateEmployees}
+                title="Late Arrivals"
+            />
+
+            <ActiveEmployeesModal
+                isOpen={isAbsentEmployeesOpen}
+                setIsOpen={setIsAbsentEmployeesOpen}
+                employees={absentEmployees}
+                title="Absent Employees"
             />
         </AppLayout>
     );
