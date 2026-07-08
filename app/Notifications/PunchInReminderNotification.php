@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushMessage;
 use NotificationChannels\WebPush\WebPushChannel;
 
-class AutoPunchOutNotification extends Notification implements ShouldQueue
+class PunchInReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -36,10 +36,10 @@ class AutoPunchOutNotification extends Notification implements ShouldQueue
     public function toWebPush(object $notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage)
-            ->title('Auto Punch-Out Alert')
+            ->title('Time to Punch In!')
             ->icon('/icons/icon192.png')
-            ->body('You have been automatically punched out after 8 hours of being logged in.')
-            ->action('View Dashboard', 'view_dashboard')
+            ->body('Don\'t forget to punch in for the day!')
+            ->action('Punch In Now', 'view_dashboard')
             ->data(['url' => url('/')]);
     }
 
@@ -51,7 +51,7 @@ class AutoPunchOutNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'You have been automatically punched out after 8 hours.',
+            'message' => 'Reminder: Please punch in for the day.',
         ];
     }
 }
