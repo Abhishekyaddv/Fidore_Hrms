@@ -21,7 +21,7 @@ class AutoPunchOut extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically punches out employees who have been logged in for more than 7 hours.';
+    protected $description = 'Automatically punches out employees who have been logged in for more than 8 hours.';
 
     /**
      * Execute the console command.
@@ -33,6 +33,7 @@ class AutoPunchOut extends Command
         // Get attendances for today and yesterday
         $attendances = Attendance::with('user')
             ->whereIn('date', [$now->toDateString(), $now->copy()->subDay()->toDateString()])
+            ->whereNull('punch_out')
             ->get();
 
         foreach ($attendances as $attendance) {
@@ -48,9 +49,9 @@ class AutoPunchOut extends Command
             if ($lastSession['out'] === null) {
                 $inTime = Carbon::parse($lastSession['in']);
 
-                // If logged in for 7 hours or more
-                if ($now->diffInMinutes($inTime) >= 7 * 60) {
-                    $outTime = $inTime->copy()->addHours(7);
+                // If logged in for 8 hours or more
+                if ($now->diffInMinutes($inTime) >= 8 * 60) {
+                    $outTime = $inTime->copy()->addHours(8);
                     
                     // Close the session
                     $history[$lastIndex]['out'] = $outTime->toIso8601String();

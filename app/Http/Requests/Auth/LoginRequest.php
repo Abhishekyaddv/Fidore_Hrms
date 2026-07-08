@@ -41,7 +41,8 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // Always pass true for 'remember' to guarantee long-term (30+ days) login sessions
+        if (! Auth::attempt($this->only('email', 'password'), true)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
